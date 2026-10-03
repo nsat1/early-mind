@@ -1,7 +1,49 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.alphabet.content import LETTERS
 from app.main import create_app
+
+
+@pytest.mark.parametrize(
+    ("alphabet_id", "status_code", "expected"),
+    [
+        ("ru", 200, [{"id": "a", "symbol": "А"}]),
+        ("en", 404, {"detail": "Alphabet not found"}),
+    ],
+)
+def test_list_letters_contract(
+    alphabet_id: str, status_code: int, expected: object
+) -> None:
+    with TestClient(create_app()) as client:
+        response = client.get(f"/api/v1/alphabets/{alphabet_id}/letters")
+
+    assert response.status_code == status_code
+    assert response.headers["content-type"] == "application/json"
+    assert response.json() == expected
+
+
+@pytest.mark.parametrize(
+    ("letters", "expected"),
+    [
+        ({}, []),
+        (
+            {"o": {"id": "o", "symbol": "О"}, "a": {"id": "a", "symbol": "А"}},
+            [{"id": "o", "symbol": "О"}, {"id": "a", "symbol": "А"}],
+        ),
+    ],
+)
+def test_list_letters_preserves_content_order(
+    monkeypatch: pytest.MonkeyPatch,
+    letters: dict[str, dict[str, str]],
+    expected: list[dict[str, str]],
+) -> None:
+    monkeypatch.setitem(LETTERS, "ru", letters)
+    with TestClient(create_app()) as client:
+        response = client.get("/api/v1/alphabets/ru/letters")
+
+    assert response.status_code == 200
+    assert response.json() == expected
 
 
 def test_get_russian_letter_returns_content() -> None:

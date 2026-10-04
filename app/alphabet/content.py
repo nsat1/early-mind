@@ -7,6 +7,13 @@ LETTERS = {
             "position": 1,
             "words": ["арбуз", "автобус", "ананас"],
         },
+        "m": {
+            "id": "m",
+            "symbol": "М",
+            "kind": "consonant",
+            "position": 14,
+            "words": ["мяч", "машина", "медведь"],
+        },
         "o": {
             "id": "o",
             "symbol": "О",

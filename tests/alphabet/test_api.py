@@ -15,6 +15,7 @@ from app.main import create_app
             200,
             [
                 {"id": "a", "symbol": "А", "kind": "vowel"},
+                {"id": "m", "symbol": "М", "kind": "consonant"},
                 {"id": "o", "symbol": "О", "kind": "vowel"},
                 {"id": "u", "symbol": "У", "kind": "vowel"},
             ],
@@ -87,15 +88,16 @@ def test_list_letters_orders_by_position(
 
 
 @pytest.mark.parametrize(
-    ("letter_id", "symbol", "words"),
+    ("letter_id", "symbol", "kind", "words"),
     [
-        ("a", "А", ["арбуз", "автобус", "ананас"]),
-        ("o", "О", ["облако", "ослик", "обруч"]),
-        ("u", "У", ["утка", "улитка", "утюг"]),
+        ("a", "А", "vowel", ["арбуз", "автобус", "ананас"]),
+        ("m", "М", "consonant", ["мяч", "машина", "медведь"]),
+        ("o", "О", "vowel", ["облако", "ослик", "обруч"]),
+        ("u", "У", "vowel", ["утка", "улитка", "утюг"]),
     ],
 )
 def test_get_russian_letter_returns_content(
-    letter_id: str, symbol: str, words: list[str]
+    letter_id: str, symbol: str, kind: str, words: list[str]
 ) -> None:
     with TestClient(create_app()) as client:
         response = client.get(f"/api/v1/alphabets/ru/letters/{letter_id}")
@@ -105,13 +107,13 @@ def test_get_russian_letter_returns_content(
     assert response.json() == {
         "id": letter_id,
         "symbol": symbol,
-        "kind": "vowel",
+        "kind": kind,
         "words": words,
     }
 
 
 @pytest.mark.parametrize(
-    "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а")]
+    "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а"), ("ru", "м")]
 )
 def test_unknown_alphabet_or_letter_returns_not_found(
     alphabet_id: str, letter_id: str
@@ -132,6 +134,7 @@ def test_missing_or_unknown_kind_is_rejected(kind_fields: dict[str, str]) -> Non
 def test_russian_letter_positions_match_alphabet() -> None:
     assert {letter["id"]: letter["position"] for letter in LETTERS["ru"].values()} == {
         "a": 1,
+        "m": 14,
         "o": 16,
         "u": 21,
     }

@@ -1,7 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from app.alphabet.content import LETTERS
+from app.alphabet.schemas import LetterSummary
 from app.main import create_app
 
 
@@ -12,9 +14,10 @@ from app.main import create_app
             "ru",
             200,
             [
-                {"id": "a", "symbol": "А"},
-                {"id": "o", "symbol": "О"},
-                {"id": "u", "symbol": "У"},
+                {"id": "a", "symbol": "А", "kind": "vowel"},
+                {"id": "m", "symbol": "М", "kind": "consonant"},
+                {"id": "o", "symbol": "О", "kind": "vowel"},
+                {"id": "u", "symbol": "У", "kind": "vowel"},
             ],
         ),
         ("en", 404, {"detail": "Alphabet not found"}),
@@ -34,19 +37,49 @@ def test_list_letters_contract(
 @pytest.mark.parametrize(
     ("letters", "expected"),
     [
-        ({}, []),
+        ([], []),
         (
-            {"o": {"id": "o", "symbol": "О"}, "a": {"id": "a", "symbol": "А"}},
-            [{"id": "o", "symbol": "О"}, {"id": "a", "symbol": "А"}],
+            [("o", "О", "vowel", 16), ("a", "А", "vowel", 1)],
+            [
+                {"id": "a", "symbol": "А", "kind": "vowel"},
+                {"id": "o", "symbol": "О", "kind": "vowel"},
+            ],
+        ),
+        (
+            [
+                ("soft", "Ь", "sign", 30),
+                ("zh", "Ж", "consonant", 8),
+                ("e", "Е", "vowel", 6),
+                ("hard", "Ъ", "sign", 28),
+                ("m", "М", "consonant", 14),
+                ("yo", "Ё", "vowel", 7),
+            ],
+            [
+                {"id": "e", "symbol": "Е", "kind": "vowel"},
+                {"id": "yo", "symbol": "Ё", "kind": "vowel"},
+                {"id": "zh", "symbol": "Ж", "kind": "consonant"},
+                {"id": "m", "symbol": "М", "kind": "consonant"},
+                {"id": "hard", "symbol": "Ъ", "kind": "sign"},
+                {"id": "soft", "symbol": "Ь", "kind": "sign"},
+            ],
         ),
     ],
 )
-def test_list_letters_preserves_content_order(
+def test_list_letters_orders_by_position(
     monkeypatch: pytest.MonkeyPatch,
-    letters: dict[str, dict[str, str]],
+    letters: list[tuple[str, str, str, int]],
     expected: list[dict[str, str]],
 ) -> None:
-    monkeypatch.setitem(LETTERS, "ru", letters)
+    content = {
+        letter_id: {
+            "id": letter_id,
+            "symbol": symbol,
+            "kind": kind,
+            "position": position,
+        }
+        for letter_id, symbol, kind, position in letters
+    }
+    monkeypatch.setitem(LETTERS, "ru", content)
     with TestClient(create_app()) as client:
         response = client.get("/api/v1/alphabets/ru/letters")
 
@@ -55,15 +88,16 @@ def test_list_letters_preserves_content_order(
 
 
 @pytest.mark.parametrize(
-    ("letter_id", "symbol", "words"),
+    ("letter_id", "symbol", "kind", "words"),
     [
-        ("a", "А", ["арбуз", "автобус", "ананас"]),
-        ("o", "О", ["облако", "ослик", "обруч"]),
-        ("u", "У", ["утка", "улитка", "утюг"]),
+        ("a", "А", "vowel", ["арбуз", "автобус", "ананас"]),
+        ("m", "М", "consonant", ["мяч", "машина", "медведь"]),
+        ("o", "О", "vowel", ["облако", "ослик", "обруч"]),
+        ("u", "У", "vowel", ["утка", "улитка", "утюг"]),
     ],
 )
 def test_get_russian_letter_returns_content(
-    letter_id: str, symbol: str, words: list[str]
+    letter_id: str, symbol: str, kind: str, words: list[str]
 ) -> None:
     with TestClient(create_app()) as client:
         response = client.get(f"/api/v1/alphabets/ru/letters/{letter_id}")
@@ -73,12 +107,13 @@ def test_get_russian_letter_returns_content(
     assert response.json() == {
         "id": letter_id,
         "symbol": symbol,
+        "kind": kind,
         "words": words,
     }
 
 
 @pytest.mark.parametrize(
-    "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а")]
+    "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а"), ("ru", "м")]
 )
 def test_unknown_alphabet_or_letter_returns_not_found(
     alphabet_id: str, letter_id: str
@@ -88,3 +123,18 @@ def test_unknown_alphabet_or_letter_returns_not_found(
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Alphabet or letter not found"}
+
+
+@pytest.mark.parametrize("kind_fields", [{}, {"kind": "unknown"}])
+def test_missing_or_unknown_kind_is_rejected(kind_fields: dict[str, str]) -> None:
+    with pytest.raises(ValidationError):
+        LetterSummary.model_validate({"id": "a", "symbol": "А", **kind_fields})
+
+
+def test_russian_letter_positions_match_alphabet() -> None:
+    assert {letter["id"]: letter["position"] for letter in LETTERS["ru"].values()} == {
+        "a": 1,
+        "m": 14,
+        "o": 16,
+        "u": 21,
+    }

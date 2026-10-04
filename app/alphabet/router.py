@@ -11,7 +11,8 @@ async def list_letters(alphabet_id: str) -> list[LetterSummary]:
     alphabet = LETTERS.get(alphabet_id)
     if alphabet is None:
         raise HTTPException(status_code=404, detail="Alphabet not found")
-    return [LetterSummary.model_validate(letter) for letter in alphabet.values()]
+    letters = sorted(alphabet.values(), key=lambda letter: letter["position"])
+    return [LetterSummary.model_validate(letter) for letter in letters]
 
 
 @router.get(

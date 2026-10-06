@@ -1,10 +1,10 @@
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.alphabet.content import LETTERS
 from app.alphabet.schemas import LetterSummary
-from app.main import create_app
 
 
 @pytest.mark.parametrize(
@@ -24,9 +24,9 @@ from app.main import create_app
     ],
 )
 def test_list_letters_contract(
-    alphabet_id: str, status_code: int, expected: object
+    app: FastAPI, alphabet_id: str, status_code: int, expected: object
 ) -> None:
-    with TestClient(create_app()) as client:
+    with TestClient(app) as client:
         response = client.get(f"/api/v1/alphabets/{alphabet_id}/letters")
 
     assert response.status_code == status_code
@@ -66,6 +66,7 @@ def test_list_letters_contract(
     ],
 )
 def test_list_letters_orders_by_position(
+    app: FastAPI,
     monkeypatch: pytest.MonkeyPatch,
     letters: list[tuple[str, str, str, int]],
     expected: list[dict[str, str]],
@@ -80,7 +81,7 @@ def test_list_letters_orders_by_position(
         for letter_id, symbol, kind, position in letters
     }
     monkeypatch.setitem(LETTERS, "ru", content)
-    with TestClient(create_app()) as client:
+    with TestClient(app) as client:
         response = client.get("/api/v1/alphabets/ru/letters")
 
     assert response.status_code == 200
@@ -97,9 +98,9 @@ def test_list_letters_orders_by_position(
     ],
 )
 def test_get_russian_letter_returns_content(
-    letter_id: str, symbol: str, kind: str, words: list[str]
+    app: FastAPI, letter_id: str, symbol: str, kind: str, words: list[str]
 ) -> None:
-    with TestClient(create_app()) as client:
+    with TestClient(app) as client:
         response = client.get(f"/api/v1/alphabets/ru/letters/{letter_id}")
 
     assert response.status_code == 200
@@ -116,9 +117,9 @@ def test_get_russian_letter_returns_content(
     "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а"), ("ru", "м")]
 )
 def test_unknown_alphabet_or_letter_returns_not_found(
-    alphabet_id: str, letter_id: str
+    app: FastAPI, alphabet_id: str, letter_id: str
 ) -> None:
-    with TestClient(create_app()) as client:
+    with TestClient(app) as client:
         response = client.get(f"/api/v1/alphabets/{alphabet_id}/letters/{letter_id}")
 
     assert response.status_code == 404

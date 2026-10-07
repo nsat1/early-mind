@@ -3,6 +3,7 @@ name = "early-mind"
 version = "0.1.0"
 requires-python = ">=3.14,<3.15"
 dependencies = [
+    "alembic>=1.20.0,<1.21",
     "argon2-cffi>=25.1.0,<26",
     "fastapi>=0.142.2,<0.143",
     "psycopg[binary]>=3.3.6,<3.4",
@@ -21,6 +22,23 @@ dev = [
 
 [tool.uv]
 package = false
+
+[tool.alembic]
+script_location = "%(here)s/migrations"
+file_template = "%%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d_%%(rev)s_%%(slug)s"
+prepend_sys_path = ["."]
+
+[[tool.alembic.post_write_hooks]]
+name = "ruff_check"
+type = "module"
+module = "ruff"
+options = "check --fix REVISION_SCRIPT_FILENAME"
+
+[[tool.alembic.post_write_hooks]]
+name = "ruff_format"
+type = "module"
+module = "ruff"
+options = "format REVISION_SCRIPT_FILENAME"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

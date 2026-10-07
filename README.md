@@ -9,5 +9,7 @@
 ## Локальная PostgreSQL
 
 1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
-2. Скопируйте `.env.example` в `.env` и задайте случайный `POSTGRES_PASSWORD`.
+2. Скопируйте `.env.example` в `.env` и задайте случайные `POSTGRES_PASSWORD`, `DB_PASSWORD` и `DB_MIGRATION_PASSWORD`.
 3. Запустите БД: `docker compose up -d --wait db`.
+
+Роли и их пароли создаются только при первом запуске на пустом томе. Чтобы применить изменения в `scripts/db`, пересоздайте БД (все данные будут удалены): `docker compose down -v`.

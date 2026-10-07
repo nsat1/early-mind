@@ -1,0 +1,6 @@
+CREATE ROLE early_mind_migrator
+    LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE
+    NOREPLICATION NOBYPASSRLS;
+
+GRANT CONNECT ON DATABASE early_mind TO early_mind_migrator;
+GRANT USAGE, CREATE ON SCHEMA public TO early_mind_migrator;

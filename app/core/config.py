@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
-class Settings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[2] / ".env",
         env_file_encoding="utf-8",
@@ -18,8 +18,16 @@ class Settings(BaseSettings):
     db_host: NonEmptyString = "127.0.0.1"
     db_port: int = Field(default=5432, ge=1, le=65535)
     db_name: NonEmptyString = "early_mind"
+
+
+class Settings(DatabaseSettings):
     db_user: NonEmptyString = "early_mind_app"
     db_password: SecretStr = Field(min_length=1)
+
+
+class MigrationSettings(DatabaseSettings):
+    db_migration_user: NonEmptyString = "early_mind_migrator"
+    db_migration_password: SecretStr = Field(min_length=1)
 
 
 @lru_cache

@@ -20,7 +20,8 @@ def settings(password: str) -> Settings:
 
 @pytest.mark.parametrize("password", [" @:/?#% ", "Пароль 🔐", "a'b\"c\\d"])
 def test_url_preserves_password(password: str) -> None:
-    url = build_database_url(settings(password))
+    config = settings(password)
+    url = build_database_url(config, config.db_user, config.db_password)
     assert url.drivername == "postgresql+psycopg"
     assert url.username == "app"
     assert (url.host, url.port) == ("db.invalid", 5433)

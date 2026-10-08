@@ -1,0 +1,12 @@
+{
+  "name": "early-mind",
+  "output": "allure-report",
+  "plugins": {
+    "awesome": {
+      "options": {
+        "singleFile": true,
+        "reportLanguage": "ru"
+      }
+    }
+  }
+}

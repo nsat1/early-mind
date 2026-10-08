@@ -1,9 +1,0 @@
-\getenv app_password DB_PASSWORD
-CREATE ROLE early_mind_app
-    LOGIN PASSWORD :'app_password'
-    NOSUPERUSER NOCREATEDB NOCREATEROLE
-    NOREPLICATION NOBYPASSRLS;
-
-GRANT CONNECT ON DATABASE early_mind TO early_mind_app;
-REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT USAGE ON SCHEMA public TO early_mind_app;

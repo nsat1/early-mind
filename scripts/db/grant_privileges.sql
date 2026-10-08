@@ -1,10 +1,5 @@
-\getenv migration_password DB_MIGRATION_PASSWORD
-CREATE ROLE early_mind_migrator
-    LOGIN PASSWORD :'migration_password'
-    NOSUPERUSER NOCREATEDB NOCREATEROLE
-    NOREPLICATION NOBYPASSRLS;
-
-GRANT CONNECT ON DATABASE early_mind TO early_mind_migrator;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO early_mind_app;
 GRANT USAGE, CREATE ON SCHEMA public TO early_mind_migrator;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE early_mind_migrator IN SCHEMA public

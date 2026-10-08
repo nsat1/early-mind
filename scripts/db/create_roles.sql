@@ -1,0 +1,11 @@
+\getenv app_password DB_PASSWORD
+CREATE ROLE early_mind_app
+    LOGIN PASSWORD :'app_password'
+    NOSUPERUSER NOCREATEDB NOCREATEROLE
+    NOREPLICATION NOBYPASSRLS;
+
+\getenv migration_password DB_MIGRATION_PASSWORD
+CREATE ROLE early_mind_migrator
+    LOGIN PASSWORD :'migration_password'
+    NOSUPERUSER NOCREATEDB NOCREATEROLE
+    NOREPLICATION NOBYPASSRLS;

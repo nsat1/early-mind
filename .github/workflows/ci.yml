@@ -24,6 +24,13 @@ jobs:
           version: "0.12.22"
       - name: Install dependencies
         run: uv sync --locked
+      - name: Generate database passwords
+        run: |
+          for name in POSTGRES_PASSWORD DB_PASSWORD DB_MIGRATION_PASSWORD; do
+            echo "$name=$(openssl rand -hex 32)"
+          done > .env
+      - name: Start database
+        run: docker compose up -d --wait db
       - name: Run tests
         run: uv run --locked pytest -q -W error
       - name: Run Ruff

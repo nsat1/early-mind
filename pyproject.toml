@@ -43,6 +43,8 @@ options = "format REVISION_SCRIPT_FILENAME"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = ["--strict-markers"]
+markers = ["integration: requires a running PostgreSQL"]
 
 [tool.ruff]
 target-version = "py314"

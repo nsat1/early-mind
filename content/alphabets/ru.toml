@@ -1,0 +1,29 @@
+id = "ru"
+
+[[letters]]
+code = "a"
+symbol = "А"
+kind = "vowel"
+position = 1
+words = ["арбуз", "автобус", "ананас"]
+
+[[letters]]
+code = "m"
+symbol = "М"
+kind = "consonant"
+position = 14
+words = ["мяч", "машина", "медведь"]
+
+[[letters]]
+code = "o"
+symbol = "О"
+kind = "vowel"
+position = 16
+words = ["облако", "ослик", "обруч"]
+
+[[letters]]
+code = "u"
+symbol = "У"
+kind = "vowel"
+position = 21
+words = ["утка", "улитка", "утюг"]

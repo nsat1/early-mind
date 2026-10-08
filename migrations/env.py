@@ -7,7 +7,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import MigrationSettings
-from app.db.base import Base
+from app.db.models import Base
 from app.db.session import build_database_url
 
 logging.basicConfig(format="%(levelname)-5.5s [%(name)s] %(message)s")

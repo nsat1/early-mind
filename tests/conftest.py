@@ -10,6 +10,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from pydantic import Field, SecretStr, ValidationError
 
 from app.core.config import (
@@ -22,6 +23,7 @@ from app.main import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 TEST_DATABASE = "early_mind_test"
+BACKEND_OPTIONS: dict[str, object] = {"loop_factory": asyncio.SelectorEventLoop}
 
 
 class AdminSettings(DatabaseSettings):
@@ -70,8 +72,14 @@ def app(settings: Settings) -> FastAPI:
 
 
 @pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    with TestClient(app, backend_options=BACKEND_OPTIONS) as client:
+        yield client
+
+
+@pytest.fixture
 def anyio_backend() -> tuple[str, dict[str, object]]:
-    return "asyncio", {"loop_factory": asyncio.SelectorEventLoop}
+    return "asyncio", BACKEND_OPTIONS
 
 
 def migrations_config() -> Config:

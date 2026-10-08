@@ -17,6 +17,11 @@
 
 ## Тесты
 
-- Все тесты: `uv run --locked pytest`. Интеграционные тесты создают отдельную БД `early_mind_test` в запущенной PostgreSQL и удаляют её после прогона; без БД они пропускаются.
+- Все тесты: `uv run --locked pytest`. 
+- Интеграционные тесты создают отдельную БД `early_mind_test` в запущенной PostgreSQL и удаляют её после прогона;
 - Только быстрые тесты без БД: `uv run --locked pytest -m "not integration"`.
-- Отчёт [Allure](https://allurereport.org/) (нужен Node.js): `uv run --locked pytest --alluredir=allure-results --clean-alluredir`, затем `npx allure@3.20.1 generate allure-results` — отчёт появится в `allure-report/index.html`. В CI отчёт прикладывается к каждому прогону как артефакт `allure-report`.
+
+## Отчёт [Allure]([Allure](https://allurereport.org/)) (нужен Node.js)
+- Прогон `uv run --locked pytest --alluredir=allure-results --clean-alluredir`
+- Собрать отчёт `npx allure@3.20.1 generate allure-results`
+- Открыть отчёт `start allure-report/index.html`

@@ -4,6 +4,7 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
+[![Allure Report](https://img.shields.io/badge/Allure-test%20report-blue)](https://nsat1.github.io/early-mind/)
 
 Веб-платформа раннего обучения для детей 3–6 лет: ребёнок изучает контент короткими сессиями, а родитель видит его прогресс.
 
@@ -46,4 +47,4 @@
 - **Минимальные права в БД.** Приложение и миграции работают под разными ролями: приложение может читать, добавлять, изменять и удалять строки, но не менять схему. Это проверяется тестами.
 - **Контент как код.** Алфавит хранится в TOML-файле и проходит валидацию и автоматические проверки целостности: позиция буквы, её вид, слова на эту букву.
 - **Тесты на настоящей PostgreSQL.** Интеграционные тесты создают отдельную тестовую БД, применяют миграции и проверяют ограничения, права ролей и соответствие миграций моделям.
-- **Отчёт к каждому прогону CI.** Отчёт Allure прикладывается к каждому запуску GitHub Actions.
+- **Публичный отчёт о тестах.** Отчёт Allure прикладывается к каждому запуску GitHub Actions, а отчёт по ветке `main` [опубликован на GitHub Pages](https://nsat1.github.io/early-mind/).

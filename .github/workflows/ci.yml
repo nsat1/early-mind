@@ -50,7 +50,31 @@ jobs:
           path: allure-report/index.html
           if-no-files-found: error
           retention-days: 14
+      - name: Upload report to Pages
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: allure-report
       - name: Run Ruff
         run: uv run --locked ruff check .
       - name: Check formatting
         run: uv run --locked ruff format --check .
+
+  deploy-report:
+    if: github.event_name == 'push'
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy report to Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

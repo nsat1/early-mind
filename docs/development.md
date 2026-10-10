@@ -26,6 +26,7 @@
 - Прогон: `uv run --locked pytest --alluredir=allure-results --clean-alluredir`.
 - Собрать отчёт: `npx allure@3.20.1 generate allure-results`.
 - Открыть отчёт: `start allure-report/index.html`.
+- Отчёт по ветке `main` публикуется на [GitHub Pages](https://nsat1.github.io/early-mind/) после каждого успешного прогона CI.
 
 ## Схема БД
 

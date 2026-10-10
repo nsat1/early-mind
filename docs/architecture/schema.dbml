@@ -1,0 +1,31 @@
+Table alphabets {
+  alphabet_id varchar(10) [pk]
+}
+
+Table letters {
+  letter_id integer [pk, increment]
+  alphabet_id varchar(10) [not null]
+  code varchar(20) [not null]
+  symbol varchar(1) [not null]
+  kind varchar(9) [not null]
+  position smallint [not null]
+
+  indexes {
+    (alphabet_id, code) [unique, name: 'uq_letters_alphabet_id_code']
+    (alphabet_id, position) [unique, name: 'uq_letters_alphabet_id_position']
+  }
+}
+
+Table words {
+  word_id integer [pk, increment]
+  letter_id integer [not null]
+  example varchar(50) [not null]
+  position smallint [not null]
+
+  indexes {
+    (letter_id, position) [unique, name: 'uq_words_letter_id_position']
+  }
+}
+
+Ref fk_letters_alphabet_id_alphabets: letters.alphabet_id > alphabets.alphabet_id [delete: cascade]
+Ref fk_words_letter_id_letters: words.letter_id > letters.letter_id [delete: cascade]

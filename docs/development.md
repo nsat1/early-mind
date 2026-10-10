@@ -26,3 +26,11 @@
 - Прогон: `uv run --locked pytest --alluredir=allure-results --clean-alluredir`.
 - Собрать отчёт: `npx allure@3.20.1 generate allure-results`.
 - Открыть отчёт: `start allure-report/index.html`.
+
+## Схема БД
+
+ER-диаграмма `docs/architecture/er-diagram.svg` генерируется из `docs/architecture/schema.dbml`. После изменения моделей и миграций обновите `schema.dbml` и перегенерируйте диаграмму (нужен Node.js):
+
+```bash
+npx --yes @softwaretechnik/dbml-renderer@1.0.31 -i docs/architecture/schema.dbml -o docs/architecture/er-diagram.svg
+```

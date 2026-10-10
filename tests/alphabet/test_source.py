@@ -41,6 +41,8 @@ def test_content_file_is_valid(path: Path) -> None:
         pytest.param({"symbol": "АБ"}, "string_too_long", "symbol", id="long-symbol"),
         pytest.param({"words": []}, "too_short", "words", id="no-words"),
         pytest.param({"words": [""]}, "string_too_short", "words", id="empty-word"),
+        pytest.param({"code": "a" * 21}, "string_too_long", "code", id="long-code"),
+        pytest.param({"words": ["а" * 51]}, "string_too_long", "words", id="long-word"),
     ],
 )
 def test_invalid_letter_is_rejected(
@@ -60,3 +62,12 @@ def test_duplicate_letters_are_rejected(field: str) -> None:
 
     with pytest.raises(ValidationError, match=f"Duplicate letter {field}"):
         AlphabetSource.model_validate({"id": "ru", "letters": [LETTER, duplicate]})
+
+
+def test_long_alphabet_id_is_rejected() -> None:
+    with pytest.raises(ValidationError) as raised:
+        AlphabetSource.model_validate({"id": "a" * 11, "letters": [LETTER]})
+
+    [error] = raised.value.errors()
+    assert error["type"] == "string_too_long"
+    assert error["loc"] == ("id",)

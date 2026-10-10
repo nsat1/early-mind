@@ -5,29 +5,39 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from app.alphabet.models import LetterKind
+from app.alphabet.models import (
+    ALPHABET_ID_LENGTH,
+    LETTER_CODE_LENGTH,
+    WORD_LENGTH,
+    LetterKind,
+)
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content" / "alphabets"
 
-Code = Annotated[str, StringConstraints(pattern=r"^[a-z]+$")]
+AlphabetId = Annotated[
+    str, StringConstraints(pattern=r"^[a-z]+$", max_length=ALPHABET_ID_LENGTH)
+]
+LetterCode = Annotated[
+    str, StringConstraints(pattern=r"^[a-z]+$", max_length=LETTER_CODE_LENGTH)
+]
 Symbol = Annotated[str, StringConstraints(min_length=1, max_length=1)]
-Text = Annotated[str, StringConstraints(min_length=1)]
+Example = Annotated[str, StringConstraints(min_length=1, max_length=WORD_LENGTH)]
 
 
 class LetterSource(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    code: Code
+    code: LetterCode
     symbol: Symbol
     kind: LetterKind
     position: Annotated[int, Field(gt=0)]
-    words: Annotated[list[Text], Field(min_length=1)]
+    words: Annotated[list[Example], Field(min_length=1)]
 
 
 class AlphabetSource(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    id: Code
+    id: AlphabetId
     letters: list[LetterSource]
 
     @model_validator(mode="after")

@@ -6,11 +6,16 @@ from sqlalchemy import (
     ForeignKey,
     Identity,
     SmallInteger,
+    String,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+ALPHABET_ID_LENGTH = 10
+LETTER_CODE_LENGTH = 20
+WORD_LENGTH = 50
 
 
 class LetterKind(StrEnum):
@@ -22,7 +27,9 @@ class LetterKind(StrEnum):
 class Alphabet(Base):
     __tablename__ = "alphabets"
 
-    id: Mapped[str] = mapped_column(primary_key=True)
+    alphabet_id: Mapped[str] = mapped_column(
+        String(ALPHABET_ID_LENGTH), primary_key=True
+    )
 
 
 class Letter(Base):
@@ -33,12 +40,13 @@ class Letter(Base):
         CheckConstraint("position > 0", name="position_positive"),
     )
 
-    id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
+    letter_id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
     alphabet_id: Mapped[str] = mapped_column(
-        ForeignKey("alphabets.id", ondelete="CASCADE")
+        String(ALPHABET_ID_LENGTH),
+        ForeignKey("alphabets.alphabet_id", ondelete="CASCADE"),
     )
-    code: Mapped[str]
-    symbol: Mapped[str]
+    code: Mapped[str] = mapped_column(String(LETTER_CODE_LENGTH))
+    symbol: Mapped[str] = mapped_column(String(1))
     kind: Mapped[LetterKind] = mapped_column(
         Enum(
             LetterKind,
@@ -64,7 +72,9 @@ class Word(Base):
         CheckConstraint("position > 0", name="position_positive"),
     )
 
-    id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
-    letter_id: Mapped[int] = mapped_column(ForeignKey("letters.id", ondelete="CASCADE"))
-    text: Mapped[str]
+    word_id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
+    letter_id: Mapped[int] = mapped_column(
+        ForeignKey("letters.letter_id", ondelete="CASCADE")
+    )
+    example: Mapped[str] = mapped_column(String(WORD_LENGTH))
     position: Mapped[int] = mapped_column(SmallInteger)

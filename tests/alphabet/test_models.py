@@ -17,12 +17,16 @@ INSERT_LETTER = (
     "INSERT INTO letters (alphabet_id, code, symbol, kind, position) "
     "VALUES (%s, %s, %s, %s, %s)"
 )
+INSERT_WORD = (
+    "INSERT INTO words (letter_id, example, position) "
+    "SELECT letter_id, %s, %s FROM letters"
+)
 
 
 @pytest.fixture
 def content(app_connection: psycopg.Connection) -> Iterator[psycopg.Connection]:
     with app_connection.transaction(force_rollback=True):
-        app_connection.execute("INSERT INTO alphabets (id) VALUES ('ru')")
+        app_connection.execute("INSERT INTO alphabets (alphabet_id) VALUES ('ru')")
         app_connection.execute(INSERT_LETTER, ("ru", "a", "А", "vowel", 1))
         yield app_connection
 
@@ -47,19 +51,29 @@ def test_database_rejects_invalid_letter(
 
 def test_database_rejects_invalid_word_position(content: psycopg.Connection) -> None:
     with pytest.raises(errors.CheckViolation) as raised:
-        content.execute(
-            "INSERT INTO words (letter_id, text, position) "
-            "SELECT id, 'арбуз', 0 FROM letters"
-        )
+        content.execute(INSERT_WORD, ("арбуз", 0))
     assert raised.value.diag.constraint_name == "ck_words_position_positive"
 
 
 def test_deleting_letter_deletes_its_words(content: psycopg.Connection) -> None:
-    content.execute(
-        "INSERT INTO words (letter_id, text, position) SELECT id, 'арбуз', 1 FROM letters"
-    )
+    content.execute(INSERT_WORD, ("арбуз", 1))
     content.execute("DELETE FROM letters")
     assert content.execute("SELECT count(*) FROM words").fetchone() == (0,)
+
+
+@pytest.mark.parametrize(
+    ("statement", "values"),
+    [
+        pytest.param(INSERT_LETTER, ("ru", "a" * 21, "Б", "consonant", 2), id="code"),
+        pytest.param(INSERT_LETTER, ("ru", "b", "БВ", "consonant", 2), id="symbol"),
+        pytest.param(INSERT_WORD, ("а" * 51, 1), id="example"),
+    ],
+)
+def test_database_rejects_too_long_value(
+    content: psycopg.Connection, statement: str, values: tuple[object, ...]
+) -> None:
+    with pytest.raises(errors.StringDataRightTruncation):
+        content.execute(statement, values)
 
 
 @pytest.mark.anyio
@@ -67,7 +81,7 @@ async def test_letter_round_trip(test_database: None) -> None:
     engine, sessions = create_database(Settings())
     try:
         async with sessions() as session:
-            session.add(Alphabet(id="ru"))
+            session.add(Alphabet(alphabet_id="ru"))
             session.add(
                 Letter(
                     alphabet_id="ru",
@@ -76,8 +90,8 @@ async def test_letter_round_trip(test_database: None) -> None:
                     kind=LetterKind.VOWEL,
                     position=1,
                     words=[
-                        Word(text="ананас", position=2),
-                        Word(text="арбуз", position=1),
+                        Word(example="ананас", position=2),
+                        Word(example="арбуз", position=1),
                     ],
                 )
             )
@@ -96,7 +110,7 @@ async def test_letter_round_trip(test_database: None) -> None:
     assert stored_kind == "vowel"
     assert letter is not None
     assert letter.kind is LetterKind.VOWEL
-    assert [word.text for word in letter.words] == ["арбуз", "ананас"]
+    assert [word.example for word in letter.words] == ["арбуз", "ананас"]
     assert unloaded is not None
     with pytest.raises(InvalidRequestError, match="lazy='raise'"):
         _ = unloaded.words

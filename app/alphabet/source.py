@@ -38,7 +38,7 @@ class AlphabetSource(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     id: AlphabetId
-    letters: list[LetterSource]
+    letters: Annotated[list[LetterSource], Field(min_length=1)]
 
     @model_validator(mode="after")
     def check_unique_letters(self) -> Self:

@@ -64,10 +64,23 @@ def test_duplicate_letters_are_rejected(field: str) -> None:
         AlphabetSource.model_validate({"id": "ru", "letters": [LETTER, duplicate]})
 
 
-def test_long_alphabet_id_is_rejected() -> None:
+@pytest.mark.parametrize(
+    ("alphabet", "error_type", "field"),
+    [
+        pytest.param(
+            {"id": "a" * 11, "letters": [LETTER]}, "string_too_long", "id", id="long-id"
+        ),
+        pytest.param(
+            {"id": "ru", "letters": []}, "too_short", "letters", id="no-letters"
+        ),
+    ],
+)
+def test_invalid_alphabet_is_rejected(
+    alphabet: dict[str, object], error_type: str, field: str
+) -> None:
     with pytest.raises(ValidationError) as raised:
-        AlphabetSource.model_validate({"id": "a" * 11, "letters": [LETTER]})
+        AlphabetSource.model_validate(alphabet)
 
     [error] = raised.value.errors()
-    assert error["type"] == "string_too_long"
-    assert error["loc"] == ("id",)
+    assert error["type"] == error_type
+    assert error["loc"] == (field,)

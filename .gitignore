@@ -220,3 +220,6 @@ __marimo__/
 # Allure
 allure-results/
 allure-report/
+
+# Claude Code
+CLAUDE.md

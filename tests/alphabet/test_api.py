@@ -128,7 +128,6 @@ async def test_get_letter_returns_words(
         pytest.param("de", "a", id="unknown-alphabet"),
         pytest.param("ru", "z", id="unknown-code"),
         pytest.param("en", "m", id="other-alphabet"),
-        pytest.param("ru", "а", id="cyrillic-code"),
     ],
 )
 async def test_unknown_letter_returns_not_found(

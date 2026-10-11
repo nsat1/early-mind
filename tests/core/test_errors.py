@@ -98,7 +98,8 @@ def test_openapi_describes_errors_as_problems(client: TestClient) -> None:
         "responses"
     ]
     for status in ("404", "422", "503"):
-        assert responses[status]["content"] == {
-            PROBLEM_MEDIA_TYPE: {"schema": {"$ref": "#/components/schemas/Problem"}}
-        }
+        [(media_type, content)] = responses[status]["content"].items()
+        assert media_type == PROBLEM_MEDIA_TYPE
+        assert content["schema"] == {"$ref": "#/components/schemas/Problem"}
+        assert content["example"]["status"] == int(status)
     assert "HTTPValidationError" not in schema["components"]["schemas"]

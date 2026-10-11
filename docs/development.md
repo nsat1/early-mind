@@ -21,6 +21,7 @@
 - Все тесты: `uv run --locked pytest`.
 - Интеграционные тесты создают отдельную БД `early_mind_test` в запущенной PostgreSQL и удаляют её после прогона; без БД они пропускаются.
 - Только быстрые тесты без БД: `uv run --locked pytest -m "not integration"`.
+- После изменения API обновите спецификацию `docs/api/openapi.json`: `uv run --locked python -m app.openapi`. Иначе упадёт тест её актуальности.
 
 ## Отчёт [Allure](https://allurereport.org/) (нужен Node.js)
 

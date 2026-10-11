@@ -33,6 +33,7 @@
 | [Нефункциональные требования](docs/requirements/non-functional-requirements.md) | Производительность, надёжность, безопасность, требования закона, удобство, совместимость |
 | [Архитектура: модель C4](docs/architecture/c4.md) | Контекст, контейнеры, роли БД, интерфейсы API |
 | [Модель данных](docs/architecture/data-model.md) | ER-диаграмма и словарь данных |
+| [Спецификация API](docs/api/openapi.json) | Контракт REST API в формате OpenAPI 3.1 |
 | [Руководство по запуску](docs/development.md) | Локальный запуск, PostgreSQL, тесты, отчёт Allure, схема БД |
 
 ## Технологии

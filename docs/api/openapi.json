@@ -1,0 +1,533 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Early Mind API",
+    "summary": "API платформы обучения Early Mind",
+    "description": "Ошибки возвращаются в формате Problem Details (RFC 9457) с типом `application/problem+json`.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Процесс API работает",
+        "description": "Отвечает, пока процесс запущен. БД не проверяется.",
+        "operationId": "check_health",
+        "responses": {
+          "200": {
+            "description": "Процесс работает",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "API готов принимать запросы",
+        "description": "Выполняет запрос к БД и отвечает 503, если БД недоступна.",
+        "operationId": "check_readiness",
+        "responses": {
+          "200": {
+            "description": "API готов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "API не готов: база данных недоступна",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alphabets/{alphabet_id}/letters": {
+      "get": {
+        "tags": [
+          "alphabet"
+        ],
+        "summary": "Список букв алфавита",
+        "description": "Буквы в порядке позиции в алфавите. Фильтр `kind` оставляет буквы одного вида; если таких нет — пустой список.",
+        "operationId": "list_letters",
+        "parameters": [
+          {
+            "name": "alphabet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 10,
+              "pattern": "^[a-z]+$",
+              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
+              "examples": [
+                "ru"
+              ],
+              "title": "Alphabet Id"
+            },
+            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LetterKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Вид букв: `vowel` — гласные, `consonant` — согласные, `sign` — знаки. Без фильтра — все буквы",
+              "title": "Kind"
+            },
+            "description": "Вид букв: `vowel` — гласные, `consonant` — согласные, `sign` — знаки. Без фильтра — все буквы"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Буквы алфавита",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LetterSummary"
+                  },
+                  "title": "Response List Letters"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Алфавит не найден",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "Alphabet not found"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных недоступна",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/alphabets/{alphabet_id}/letters/{code}": {
+      "get": {
+        "tags": [
+          "alphabet"
+        ],
+        "summary": "Буква со словами-примерами",
+        "description": "Буква по коду вместе со словами-примерами в порядке показа.",
+        "operationId": "get_letter",
+        "parameters": [
+          {
+            "name": "alphabet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 10,
+              "pattern": "^[a-z]+$",
+              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
+              "examples": [
+                "ru"
+              ],
+              "title": "Alphabet Id"
+            },
+            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 20,
+              "pattern": "^[a-z]+$",
+              "description": "Код буквы латиницей, например `a` или `zh`",
+              "examples": [
+                "m"
+              ],
+              "title": "Code"
+            },
+            "description": "Код буквы латиницей, например `a` или `zh`"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Буква",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LetterDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Алфавит или буква не найдены",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Not Found",
+                  "status": 404,
+                  "detail": "Alphabet or letter not found"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных недоступна",
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "description": "Проверка пройдена"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse"
+      },
+      "LetterDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Код буквы латиницей, уникален в алфавите",
+            "examples": [
+              "m"
+            ]
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Заглавная буква",
+            "examples": [
+              "М"
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LetterKind",
+            "description": "Вид буквы: гласная, согласная или знак",
+            "examples": [
+              "consonant"
+            ]
+          },
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Words",
+            "description": "Слова-примеры в порядке показа",
+            "examples": [
+              [
+                "мяч",
+                "машина",
+                "медведь"
+              ]
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "symbol",
+          "kind",
+          "words"
+        ],
+        "title": "LetterDetail"
+      },
+      "LetterKind": {
+        "type": "string",
+        "enum": [
+          "vowel",
+          "consonant",
+          "sign"
+        ],
+        "title": "LetterKind"
+      },
+      "LetterSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Код буквы латиницей, уникален в алфавите",
+            "examples": [
+              "m"
+            ]
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol",
+            "description": "Заглавная буква",
+            "examples": [
+              "М"
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LetterKind",
+            "description": "Вид буквы: гласная, согласная или знак",
+            "examples": [
+              "consonant"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "symbol",
+          "kind"
+        ],
+        "title": "LetterSummary"
+      },
+      "ParameterError": {
+        "properties": {
+          "in": {
+            "type": "string",
+            "title": "In",
+            "description": "Где передан параметр: `path` или `query`",
+            "examples": [
+              "path"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Имя параметра",
+            "examples": [
+              "alphabet_id"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail",
+            "description": "Что не так со значением",
+            "examples": [
+              "String should match pattern '^[a-z]+$'"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "in",
+          "name",
+          "detail"
+        ],
+        "title": "ParameterError"
+      },
+      "Problem": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Тип ошибки. `about:blank` — смысл передаёт HTTP-статус",
+            "default": "about:blank"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "Название HTTP-статуса",
+            "examples": [
+              "Not Found"
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "title": "Status",
+            "description": "HTTP-статус",
+            "examples": [
+              404
+            ]
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail",
+            "description": "Описание этого случая",
+            "examples": [
+              "Alphabet not found"
+            ]
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance",
+            "description": "Путь запроса",
+            "examples": [
+              "/api/v1/alphabets/de/letters"
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ParameterError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "Ошибки параметров, только для ответа 422"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "status"
+        ],
+        "title": "Problem"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "alphabet",
+      "description": "Азбука: буквы алфавита и слова-примеры"
+    },
+    {
+      "name": "health",
+      "description": "Проверки работоспособности для мониторинга"
+    }
+  ]
+}

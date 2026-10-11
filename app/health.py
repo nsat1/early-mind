@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.errors import problem_responses
 from app.db.dependencies import DbSession
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ async def health() -> HealthResponse:
     return HealthResponse(status="ok")
 
 
-@router.get("/health/ready", responses={503: {"description": "Database unavailable"}})
+@router.get("/health/ready", responses=problem_responses(503))
 async def ready(session: DbSession) -> HealthResponse:
     try:
         await session.execute(text("SELECT 1"))

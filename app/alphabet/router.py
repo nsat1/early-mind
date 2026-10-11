@@ -3,12 +3,13 @@ from fastapi import APIRouter, HTTPException
 from app.alphabet import repository
 from app.alphabet.models import LetterKind
 from app.alphabet.schemas import LetterDetail, LetterSummary
+from app.core.errors import problem_responses
 from app.db.dependencies import DbSession
 
 router = APIRouter(prefix="/api/v1/alphabets", tags=["alphabet"])
 
 
-@router.get("/{alphabet_id}/letters", responses={404: {"description": "Not found"}})
+@router.get("/{alphabet_id}/letters", responses=problem_responses(404, 422, 503))
 async def list_letters(
     session: DbSession, alphabet_id: str, kind: LetterKind | None = None
 ) -> list[LetterSummary]:
@@ -18,9 +19,7 @@ async def list_letters(
     return [LetterSummary.model_validate(letter) for letter in letters]
 
 
-@router.get(
-    "/{alphabet_id}/letters/{code}", responses={404: {"description": "Not found"}}
-)
+@router.get("/{alphabet_id}/letters/{code}", responses=problem_responses(404, 422, 503))
 async def get_letter(session: DbSession, alphabet_id: str, code: str) -> LetterDetail:
     letter = await repository.get_letter(session, alphabet_id, code)
     if letter is None:

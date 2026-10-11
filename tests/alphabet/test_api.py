@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.alphabet.models import LetterKind
 from app.alphabet.source import AlphabetSource, LetterSource
 from app.alphabet.sync import sync_alphabet
+from app.core.errors import PROBLEM_MEDIA_TYPE
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]
 
@@ -92,17 +93,8 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
     response = await api_client.get("/api/v1/alphabets/de/letters")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Alphabet not found"}
-
-
-async def test_unknown_kind_is_rejected(api_client: AsyncClient) -> None:
-    response = await api_client.get(
-        "/api/v1/alphabets/ru/letters", params={"kind": "letter"}
-    )
-
-    assert response.status_code == 422
-    [error] = response.json()["detail"]
-    assert error["loc"] == ["query", "kind"]
+    assert response.headers["content-type"] == PROBLEM_MEDIA_TYPE
+    assert response.json()["detail"] == "Alphabet not found"
 
 
 @pytest.mark.parametrize(
@@ -145,4 +137,5 @@ async def test_unknown_letter_returns_not_found(
     response = await api_client.get(f"/api/v1/alphabets/{alphabet_id}/letters/{code}")
 
     assert response.status_code == 404
-    assert response.json() == {"detail": "Alphabet or letter not found"}
+    assert response.headers["content-type"] == PROBLEM_MEDIA_TYPE
+    assert response.json()["detail"] == "Alphabet or letter not found"

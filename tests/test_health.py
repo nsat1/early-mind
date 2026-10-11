@@ -19,5 +19,12 @@ def test_ready_reports_unavailable_database(
         response = client.get("/health/ready")
 
     assert response.status_code == 503
-    assert response.json() == {"detail": "Database unavailable"}
+    assert response.headers["content-type"] == "application/problem+json"
+    assert response.json() == {
+        "type": "about:blank",
+        "title": "Service Unavailable",
+        "status": 503,
+        "detail": "Database unavailable",
+        "instance": "/health/ready",
+    }
     assert caplog.messages == ["Database readiness check failed"]

@@ -54,9 +54,9 @@ def test_request_session_lifecycle(
             if failure is None:
                 assert response.json() == {"same": True}
             elif failure == "http":
-                assert response.json() == {"detail": "Rejected"}
+                assert response.json()["detail"] == "Rejected"
             else:
-                assert response.text == "Internal Server Error"
+                assert response.json()["title"] == "Internal Server Error"
 
     assert factory.call_count == 2
     assert used == sessions

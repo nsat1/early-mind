@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Early Mind API",
-    "summary": "API платформы обучения Early Mind",
-    "description": "Ошибки возвращаются в формате Problem Details (RFC 9457) с типом `application/problem+json`.",
+    "summary": "API платформы раннего обучения Early Mind",
+    "description": "Контент азбуки для веб-приложения. Ошибки возвращаются в формате Problem Details (RFC 9457) с типом `application/problem+json`.",
     "version": "0.1.0"
   },
   "paths": {
@@ -84,13 +84,13 @@
               "type": "string",
               "maxLength": 10,
               "pattern": "^[a-z]+$",
-              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
+              "description": "Код алфавита — код языка по ISO 639-1",
               "examples": [
                 "ru"
               ],
               "title": "Alphabet Id"
             },
-            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
+            "description": "Код алфавита — код языка по ISO 639-1"
           },
           {
             "name": "kind",
@@ -201,13 +201,13 @@
               "type": "string",
               "maxLength": 10,
               "pattern": "^[a-z]+$",
-              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
+              "description": "Код алфавита — код языка по ISO 639-1",
               "examples": [
                 "ru"
               ],
               "title": "Alphabet Id"
             },
-            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
+            "description": "Код алфавита — код языка по ISO 639-1"
           },
           {
             "name": "code",

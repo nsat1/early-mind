@@ -50,17 +50,27 @@ jobs:
           path: allure-report/index.html
           if-no-files-found: error
           retention-days: 14
-      - name: Upload report to Pages
+      - name: Build API docs
+        if: github.event_name == 'push'
+        run: >-
+          npx --yes @redocly/cli@2.54.3 build-docs docs/api/openapi.json
+          --output site/api/index.html --title "Early Mind API" --disableGoogleFont
+      - name: Assemble Pages site
+        if: github.event_name == 'push'
+        run: |
+          cp -r allure-report/. site/
+          cp docs/api/openapi.json site/api/
+      - name: Upload site to Pages
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: allure-report
+          path: site
       - name: Run Ruff
         run: uv run --locked ruff check .
       - name: Check formatting
         run: uv run --locked ruff format --check .
 
-  deploy-report:
+  deploy-pages:
     if: github.event_name == 'push'
     needs: checks
     runs-on: ubuntu-24.04
@@ -75,6 +85,6 @@ jobs:
       group: pages
       cancel-in-progress: false
     steps:
-      - name: Deploy report to Pages
+      - name: Deploy site to Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

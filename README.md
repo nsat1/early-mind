@@ -5,6 +5,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org)
 [![Allure Report](https://img.shields.io/badge/Allure-test%20report-blue)](https://nsat1.github.io/early-mind/)
+[![API docs](https://img.shields.io/badge/API-docs-blue?logo=openapiinitiative&logoColor=white)](https://nsat1.github.io/early-mind/api/)
 
 Веб-платформа раннего обучения для детей 3–6 лет: ребёнок изучает контент короткими сессиями, а родитель видит его прогресс.
 
@@ -33,7 +34,7 @@
 | [Нефункциональные требования](docs/requirements/non-functional-requirements.md) | Производительность, надёжность, безопасность, требования закона, удобство, совместимость |
 | [Архитектура: модель C4](docs/architecture/c4.md) | Контекст, контейнеры, роли БД, интерфейсы API |
 | [Модель данных](docs/architecture/data-model.md) | ER-диаграмма и словарь данных |
-| [Спецификация API](docs/api/openapi.json) | Контракт REST API в формате OpenAPI 3.1 |
+| [Спецификация API](docs/api/openapi.json) | Контракт REST API в формате OpenAPI 3.1, [документация на GitHub Pages](https://nsat1.github.io/early-mind/api/) |
 | [Руководство по запуску](docs/development.md) | Локальный запуск, PostgreSQL, тесты, отчёт Allure, схема БД |
 
 ## Технологии

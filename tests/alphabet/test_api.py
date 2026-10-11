@@ -1,141 +1,148 @@
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from pydantic import ValidationError
+from httpx2 import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.alphabet.content import LETTERS
-from app.alphabet.schemas import LetterSummary
+from app.alphabet.models import LetterKind
+from app.alphabet.source import AlphabetSource, LetterSource
+from app.alphabet.sync import sync_alphabet
+
+pytestmark = [pytest.mark.integration, pytest.mark.anyio]
+
+RUSSIAN = AlphabetSource(
+    id="ru",
+    letters=[
+        LetterSource(
+            code="soft", symbol="Ь", kind=LetterKind.SIGN, position=30, words=["конь"]
+        ),
+        LetterSource(
+            code="m",
+            symbol="М",
+            kind=LetterKind.CONSONANT,
+            position=14,
+            words=["мяч", "машина"],
+        ),
+        LetterSource(
+            code="a",
+            symbol="А",
+            kind=LetterKind.VOWEL,
+            position=1,
+            words=["арбуз", "автобус", "ананас"],
+        ),
+        LetterSource(
+            code="yo", symbol="Ё", kind=LetterKind.VOWEL, position=7, words=["ёж"]
+        ),
+    ],
+)
+ENGLISH = AlphabetSource(
+    id="en",
+    letters=[
+        LetterSource(
+            code="a", symbol="A", kind=LetterKind.VOWEL, position=1, words=["apple"]
+        )
+    ],
+)
+
+
+@pytest.fixture(autouse=True)
+async def alphabets(db_session: AsyncSession) -> None:
+    for source in (RUSSIAN, ENGLISH):
+        await sync_alphabet(db_session, source)
+
+
+async def test_list_letters_orders_by_position(api_client: AsyncClient) -> None:
+    response = await api_client.get("/api/v1/alphabets/ru/letters")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/json"
+    assert response.json() == [
+        {"code": "a", "symbol": "А", "kind": "vowel"},
+        {"code": "yo", "symbol": "Ё", "kind": "vowel"},
+        {"code": "m", "symbol": "М", "kind": "consonant"},
+        {"code": "soft", "symbol": "Ь", "kind": "sign"},
+    ]
 
 
 @pytest.mark.parametrize(
-    ("alphabet_id", "status_code", "expected"),
+    ("kind", "codes"),
+    [("vowel", ["a", "yo"]), ("consonant", ["m"]), ("sign", ["soft"])],
+)
+async def test_list_letters_filters_by_kind(
+    api_client: AsyncClient, kind: str, codes: list[str]
+) -> None:
+    response = await api_client.get(
+        "/api/v1/alphabets/ru/letters", params={"kind": kind}
+    )
+
+    assert response.status_code == 200
+    assert [letter["code"] for letter in response.json()] == codes
+
+
+async def test_filter_without_matches_returns_empty_list(
+    api_client: AsyncClient,
+) -> None:
+    response = await api_client.get(
+        "/api/v1/alphabets/en/letters", params={"kind": "sign"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> None:
+    response = await api_client.get("/api/v1/alphabets/de/letters")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Alphabet not found"}
+
+
+async def test_unknown_kind_is_rejected(api_client: AsyncClient) -> None:
+    response = await api_client.get(
+        "/api/v1/alphabets/ru/letters", params={"kind": "letter"}
+    )
+
+    assert response.status_code == 422
+    [error] = response.json()["detail"]
+    assert error["loc"] == ["query", "kind"]
+
+
+@pytest.mark.parametrize(
+    ("alphabet_id", "expected"),
     [
         (
             "ru",
-            200,
-            [
-                {"id": "a", "symbol": "А", "kind": "vowel"},
-                {"id": "m", "symbol": "М", "kind": "consonant"},
-                {"id": "o", "symbol": "О", "kind": "vowel"},
-                {"id": "u", "symbol": "У", "kind": "vowel"},
-            ],
+            {
+                "code": "a",
+                "symbol": "А",
+                "kind": "vowel",
+                "words": ["арбуз", "автобус", "ананас"],
+            },
         ),
-        ("en", 404, {"detail": "Alphabet not found"}),
+        ("en", {"code": "a", "symbol": "A", "kind": "vowel", "words": ["apple"]}),
     ],
 )
-def test_list_letters_contract(
-    app: FastAPI, alphabet_id: str, status_code: int, expected: object
+async def test_get_letter_returns_words(
+    api_client: AsyncClient, alphabet_id: str, expected: dict[str, object]
 ) -> None:
-    with TestClient(app) as client:
-        response = client.get(f"/api/v1/alphabets/{alphabet_id}/letters")
+    response = await api_client.get(f"/api/v1/alphabets/{alphabet_id}/letters/a")
 
-    assert response.status_code == status_code
+    assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
     assert response.json() == expected
 
 
 @pytest.mark.parametrize(
-    ("letters", "expected"),
+    ("alphabet_id", "code"),
     [
-        ([], []),
-        (
-            [("o", "О", "vowel", 16), ("a", "А", "vowel", 1)],
-            [
-                {"id": "a", "symbol": "А", "kind": "vowel"},
-                {"id": "o", "symbol": "О", "kind": "vowel"},
-            ],
-        ),
-        (
-            [
-                ("soft", "Ь", "sign", 30),
-                ("zh", "Ж", "consonant", 8),
-                ("e", "Е", "vowel", 6),
-                ("hard", "Ъ", "sign", 28),
-                ("m", "М", "consonant", 14),
-                ("yo", "Ё", "vowel", 7),
-            ],
-            [
-                {"id": "e", "symbol": "Е", "kind": "vowel"},
-                {"id": "yo", "symbol": "Ё", "kind": "vowel"},
-                {"id": "zh", "symbol": "Ж", "kind": "consonant"},
-                {"id": "m", "symbol": "М", "kind": "consonant"},
-                {"id": "hard", "symbol": "Ъ", "kind": "sign"},
-                {"id": "soft", "symbol": "Ь", "kind": "sign"},
-            ],
-        ),
+        pytest.param("de", "a", id="unknown-alphabet"),
+        pytest.param("ru", "z", id="unknown-code"),
+        pytest.param("en", "m", id="other-alphabet"),
+        pytest.param("ru", "а", id="cyrillic-code"),
     ],
 )
-def test_list_letters_orders_by_position(
-    app: FastAPI,
-    monkeypatch: pytest.MonkeyPatch,
-    letters: list[tuple[str, str, str, int]],
-    expected: list[dict[str, str]],
+async def test_unknown_letter_returns_not_found(
+    api_client: AsyncClient, alphabet_id: str, code: str
 ) -> None:
-    content = {
-        letter_id: {
-            "id": letter_id,
-            "symbol": symbol,
-            "kind": kind,
-            "position": position,
-        }
-        for letter_id, symbol, kind, position in letters
-    }
-    monkeypatch.setitem(LETTERS, "ru", content)
-    with TestClient(app) as client:
-        response = client.get("/api/v1/alphabets/ru/letters")
-
-    assert response.status_code == 200
-    assert response.json() == expected
-
-
-@pytest.mark.parametrize(
-    ("letter_id", "symbol", "kind", "words"),
-    [
-        ("a", "А", "vowel", ["арбуз", "автобус", "ананас"]),
-        ("m", "М", "consonant", ["мяч", "машина", "медведь"]),
-        ("o", "О", "vowel", ["облако", "ослик", "обруч"]),
-        ("u", "У", "vowel", ["утка", "улитка", "утюг"]),
-    ],
-)
-def test_get_russian_letter_returns_content(
-    app: FastAPI, letter_id: str, symbol: str, kind: str, words: list[str]
-) -> None:
-    with TestClient(app) as client:
-        response = client.get(f"/api/v1/alphabets/ru/letters/{letter_id}")
-
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/json"
-    assert response.json() == {
-        "id": letter_id,
-        "symbol": symbol,
-        "kind": kind,
-        "words": words,
-    }
-
-
-@pytest.mark.parametrize(
-    "alphabet_id,letter_id", [("en", "a"), ("ru", "z"), ("ru", "а"), ("ru", "м")]
-)
-def test_unknown_alphabet_or_letter_returns_not_found(
-    app: FastAPI, alphabet_id: str, letter_id: str
-) -> None:
-    with TestClient(app) as client:
-        response = client.get(f"/api/v1/alphabets/{alphabet_id}/letters/{letter_id}")
+    response = await api_client.get(f"/api/v1/alphabets/{alphabet_id}/letters/{code}")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Alphabet or letter not found"}
-
-
-@pytest.mark.parametrize("kind_fields", [{}, {"kind": "unknown"}])
-def test_missing_or_unknown_kind_is_rejected(kind_fields: dict[str, str]) -> None:
-    with pytest.raises(ValidationError):
-        LetterSummary.model_validate({"id": "a", "symbol": "А", **kind_fields})
-
-
-def test_russian_letter_positions_match_alphabet() -> None:
-    assert {letter["id"]: letter["position"] for letter in LETTERS["ru"].values()} == {
-        "a": 1,
-        "m": 14,
-        "o": 16,
-        "u": 21,
-    }

@@ -1,7 +1,7 @@
 import asyncio
 import os
 import secrets
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import NoReturn
 
@@ -11,7 +11,9 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from httpx2 import ASGITransport, AsyncClient
 from pydantic import Field, SecretStr, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import (
     DatabaseSettings,
@@ -19,6 +21,8 @@ from app.core.config import (
     NonEmptyString,
     Settings,
 )
+from app.db.dependencies import get_db_session
+from app.db.session import create_database
 from app.main import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -132,3 +136,31 @@ def app_connection(test_database: None) -> Iterator[psycopg.Connection]:
     settings = Settings()
     with connect(settings, settings.db_user, settings.db_password) as connection:
         yield connection
+
+
+@pytest.fixture
+async def db_session(test_database: None) -> AsyncIterator[AsyncSession]:
+    engine, _ = create_database(Settings())
+    try:
+        async with engine.connect() as connection:
+            transaction = await connection.begin()
+            async with AsyncSession(
+                bind=connection,
+                join_transaction_mode="create_savepoint",
+                expire_on_commit=False,
+            ) as session:
+                yield session
+            await transaction.rollback()
+    finally:
+        await engine.dispose()
+
+
+@pytest.fixture
+async def api_client(
+    app: FastAPI, db_session: AsyncSession
+) -> AsyncIterator[AsyncClient]:
+    app.dependency_overrides[get_db_session] = lambda: db_session
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        yield client

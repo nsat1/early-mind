@@ -1,13 +1,15 @@
-from typing import Literal
+from pydantic import BaseModel, ConfigDict
 
-from pydantic import BaseModel
+from app.alphabet.models import LetterKind
 
 
 class LetterSummary(BaseModel):
-    id: str
+    model_config = ConfigDict(from_attributes=True)
+
+    code: str
     symbol: str
-    kind: Literal["vowel", "consonant", "sign"]
+    kind: LetterKind
 
 
-class LetterResponse(LetterSummary):
+class LetterDetail(LetterSummary):
     words: list[str]

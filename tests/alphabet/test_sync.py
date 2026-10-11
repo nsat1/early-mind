@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import Iterator
 
 import psycopg
 import pytest
@@ -11,8 +11,6 @@ from sqlalchemy.orm import selectinload
 from app.alphabet.models import Letter, LetterKind
 from app.alphabet.source import CONTENT_DIR, AlphabetSource, LetterSource, load_alphabet
 from app.alphabet.sync import SyncResult, main, sync_alphabet
-from app.core.config import Settings
-from app.db.session import create_database
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]
 
@@ -24,16 +22,6 @@ B = LetterSource(
 )
 ALPHABET = AlphabetSource(id="ru", letters=[A, B])
 RUSSIAN = CONTENT_DIR / "ru.toml"
-
-
-@pytest.fixture
-async def session(test_database: None) -> AsyncIterator[AsyncSession]:
-    engine, sessions = create_database(Settings())
-    try:
-        async with sessions() as session:
-            yield session
-    finally:
-        await engine.dispose()
 
 
 async def stored_alphabet(session: AsyncSession, alphabet_id: str) -> AlphabetSource:
@@ -78,29 +66,29 @@ def expected_result(source: AlphabetSource, changed: int, removed: int) -> SyncR
     )
 
 
-async def test_sync_loads_content_file(session: AsyncSession) -> None:
+async def test_sync_loads_content_file(db_session: AsyncSession) -> None:
     source = load_alphabet(RUSSIAN)
 
-    result = await sync_alphabet(session, source)
+    result = await sync_alphabet(db_session, source)
 
     rows = 1 + len(source.letters) + count_words(source)
     assert result == expected_result(source, changed=rows, removed=0)
-    assert await stored_alphabet(session, "ru") == source
+    assert await stored_alphabet(db_session, "ru") == source
 
 
-async def test_repeated_sync_changes_nothing(session: AsyncSession) -> None:
-    await sync_alphabet(session, ALPHABET)
-    ids = await letter_ids(session)
+async def test_repeated_sync_changes_nothing(db_session: AsyncSession) -> None:
+    await sync_alphabet(db_session, ALPHABET)
+    ids = await letter_ids(db_session)
 
-    result = await sync_alphabet(session, ALPHABET)
+    result = await sync_alphabet(db_session, ALPHABET)
 
     assert result == expected_result(ALPHABET, changed=0, removed=0)
-    assert await letter_ids(session) == ids
+    assert await letter_ids(db_session) == ids
 
 
-async def test_sync_applies_changes(session: AsyncSession) -> None:
-    await sync_alphabet(session, ALPHABET)
-    ids = await letter_ids(session)
+async def test_sync_applies_changes(db_session: AsyncSession) -> None:
+    await sync_alphabet(db_session, ALPHABET)
+    ids = await letter_ids(db_session)
     changed = AlphabetSource(
         id="ru",
         letters=[
@@ -116,29 +104,29 @@ async def test_sync_applies_changes(session: AsyncSession) -> None:
         ],
     )
 
-    result = await sync_alphabet(session, changed)
+    result = await sync_alphabet(db_session, changed)
 
     assert result == expected_result(changed, changed=4, removed=1)
-    assert await stored_alphabet(session, "ru") == changed
-    assert ids.items() <= (await letter_ids(session)).items()
+    assert await stored_alphabet(db_session, "ru") == changed
+    assert ids.items() <= (await letter_ids(db_session)).items()
 
 
 async def test_sync_keeps_letters_missing_from_content(
-    session: AsyncSession, caplog: pytest.LogCaptureFixture
+    db_session: AsyncSession, caplog: pytest.LogCaptureFixture
 ) -> None:
-    await sync_alphabet(session, ALPHABET)
+    await sync_alphabet(db_session, ALPHABET)
     reduced = AlphabetSource(id="ru", letters=[A])
 
     with caplog.at_level(logging.WARNING, logger="app.alphabet.sync"):
-        result = await sync_alphabet(session, reduced)
+        result = await sync_alphabet(db_session, reduced)
 
     assert result == expected_result(reduced, changed=0, removed=0)
-    assert await stored_alphabet(session, "ru") == ALPHABET
+    assert await stored_alphabet(db_session, "ru") == ALPHABET
     assert caplog.messages == ["ru: letters missing from content: b"]
 
 
-async def test_sync_rejects_swapped_positions(session: AsyncSession) -> None:
-    await sync_alphabet(session, ALPHABET)
+async def test_sync_rejects_swapped_positions(db_session: AsyncSession) -> None:
+    await sync_alphabet(db_session, ALPHABET)
     swapped = AlphabetSource(
         id="ru",
         letters=[
@@ -148,11 +136,11 @@ async def test_sync_rejects_swapped_positions(session: AsyncSession) -> None:
     )
 
     with pytest.raises(IntegrityError) as raised:
-        async with session.begin_nested():
-            await sync_alphabet(session, swapped)
+        async with db_session.begin_nested():
+            await sync_alphabet(db_session, swapped)
 
     assert raised.value.orig.diag.constraint_name == "uq_letters_alphabet_id_position"
-    assert await stored_alphabet(session, "ru") == ALPHABET
+    assert await stored_alphabet(db_session, "ru") == ALPHABET
 
 
 @pytest.fixture

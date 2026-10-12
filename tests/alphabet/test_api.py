@@ -29,13 +29,7 @@ RUSSIAN = AlphabetSource.model_validate(
     {
         "id": "ru",
         "letters": [
-            letter("soft", "Ь", "sign", 30, "конь")
-            | {
-                "explanation": {
-                    "pair": ["угол", "уголь"],
-                    "sound": "letters/soft-explanation.mp3",
-                }
-            },
+            letter("soft", "Ь", "sign", 30, "конь"),
             letter("m", "М", "consonant", 14)
             | {
                 "sound": "letters/m.mp3",
@@ -60,7 +54,6 @@ ENGLISH = AlphabetSource.model_validate(
 
 MEDIA = {
     "letters/m.mp3": b"m sound",
-    "letters/soft-explanation.mp3": b"soft sign explanation",
     "words/myach.webp": b"ball image",
     "words/myach.mp3": b"ball sound",
 }
@@ -137,7 +130,6 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
                 "symbol": "А",
                 "kind": "vowel",
                 "sound_url": None,
-                "explanation": None,
                 "words": [
                     {"text": text, "image_url": None, "sound_url": None}
                     for text in ("арбуз", "автобус", "ананас")
@@ -151,7 +143,6 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
                 "symbol": "A",
                 "kind": "vowel",
                 "sound_url": None,
-                "explanation": None,
                 "words": [{"text": "apple", "image_url": None, "sound_url": None}],
             },
         ),
@@ -176,7 +167,6 @@ async def test_get_letter_returns_media_urls(api_client: AsyncClient) -> None:
         "symbol": "М",
         "kind": "consonant",
         "sound_url": media_url("letters/m.mp3"),
-        "explanation": None,
         "words": [
             {
                 "text": "мяч",
@@ -185,16 +175,6 @@ async def test_get_letter_returns_media_urls(api_client: AsyncClient) -> None:
             },
             {"text": "машина", "image_url": None, "sound_url": None},
         ],
-    }
-
-
-async def test_get_sign_returns_explanation(api_client: AsyncClient) -> None:
-    response = await api_client.get("/api/v1/alphabets/ru/letters/soft")
-
-    assert response.status_code == 200
-    assert response.json()["explanation"] == {
-        "pair": ["угол", "уголь"],
-        "sound_url": media_url("letters/soft-explanation.mp3"),
     }
 
 

@@ -59,21 +59,5 @@ def test_words_illustrate_letter(letter: LetterSource) -> None:
     assert len(texts) <= 3
 
 
-@pytest.mark.parametrize(
-    "letter",
-    [letter for letter in RUSSIAN.letters if letter.explanation is not None],
-    ids=lambda letter: f"ru-{letter.code}",
-)
-def test_explanation_pair_differs_by_sign(letter: LetterSource) -> None:
-    assert letter.explanation is not None
-    without_sign, with_sign = letter.explanation.pair
-    lowercase = letter.symbol.lower()
-    assert WORD.fullmatch(without_sign), without_sign
-    assert WORD.fullmatch(with_sign), with_sign
-    assert lowercase not in without_sign
-    assert lowercase in with_sign
-    assert with_sign.replace(lowercase, "") == without_sign
-
-
 def test_media_files_exist_within_limits() -> None:
     assert media_problems(RUSSIAN, CONTENT_DIR / "ru") == []

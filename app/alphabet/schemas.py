@@ -37,23 +37,8 @@ class WordExample(BaseModel):
     sound_url: MediaUrl
 
 
-class Explanation(BaseModel):
-    pair: Annotated[
-        tuple[str, str],
-        Field(
-            description="Пара слов, которые отличаются только знаком",
-            examples=[["сел", "съел"]],
-        ),
-    ]
-    sound_url: MediaUrl
-
-
 class LetterDetail(LetterSummary):
     sound_url: MediaUrl
-    explanation: Annotated[
-        Explanation | None,
-        Field(description="Пояснение роли знака. Есть только у Ъ и Ь"),
-    ]
     words: Annotated[
         list[WordExample], Field(description="Слова-примеры в порядке показа")
     ]

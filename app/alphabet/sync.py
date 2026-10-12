@@ -23,15 +23,7 @@ from app.db.session import create_database
 
 logger = logging.getLogger(__name__)
 
-LETTER_FIELDS = (
-    "symbol",
-    "kind",
-    "position",
-    "sound",
-    "explanation_without_sign",
-    "explanation_with_sign",
-    "explanation_sound",
-)
+LETTER_FIELDS = ("symbol", "kind", "position", "sound")
 WORD_FIELDS = ("example", "image", "sound")
 
 
@@ -62,18 +54,12 @@ def versioned(files: Path, path: str | None) -> str | None:
 
 
 def letter_row(letter: LetterSource, files: Path) -> dict[str, Any]:
-    explanation = letter.explanation
     return {
         "code": letter.code,
         "symbol": letter.symbol,
         "kind": letter.kind,
         "position": letter.position,
         "sound": versioned(files, letter.sound),
-        "explanation_without_sign": explanation.pair[0] if explanation else None,
-        "explanation_with_sign": explanation.pair[1] if explanation else None,
-        "explanation_sound": (
-            versioned(files, explanation.sound) if explanation else None
-        ),
     }
 
 

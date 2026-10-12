@@ -15,7 +15,6 @@ from app.alphabet.source import (
     ALPHABET_FILE,
     CONTENT_DIR,
     AlphabetSource,
-    ExplanationSource,
     LetterSource,
     WordSource,
     load_alphabet,
@@ -239,28 +238,6 @@ async def test_sync_rejects_missing_media(
         await sync_alphabet(db_session, WITH_MEDIA, tmp_path)
 
     assert await stored(db_session, "ru") == []
-
-
-async def test_sync_stores_explanation(db_session: AsyncSession) -> None:
-    sign = LetterSource(
-        code="hard",
-        symbol="Ъ",
-        kind=LetterKind.SIGN,
-        position=28,
-        words=words("подъезд"),
-        explanation=ExplanationSource(pair=("сел", "съел")),
-    )
-
-    await sync_alphabet(db_session, AlphabetSource(id="ru", letters=[sign]))
-
-    row = await db_session.execute(
-        select(
-            Letter.explanation_without_sign,
-            Letter.explanation_with_sign,
-            Letter.explanation_sound,
-        )
-    )
-    assert tuple(row.one()) == ("сел", "съел", None)
 
 
 @pytest.fixture

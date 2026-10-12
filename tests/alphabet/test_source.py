@@ -33,7 +33,6 @@ SIGN: dict[str, Any] = {
     "kind": "sign",
     "position": 28,
     "words": [{"text": "подъезд"}],
-    "explanation": {"pair": ["сел", "съел"]},
 }
 
 
@@ -80,12 +79,6 @@ def test_content_file_is_valid(path: Path) -> None:
             "sound",
             id="path-outside-media",
         ),
-        pytest.param(
-            {"explanation": {"pair": ["сел", "съел", "ел"]}},
-            "too_long",
-            "explanation",
-            id="explanation-not-pair",
-        ),
     ],
 )
 def test_invalid_letter_is_rejected(
@@ -97,20 +90,6 @@ def test_invalid_letter_is_rejected(
     [error] = raised.value.errors()
     assert error["type"] == error_type
     assert error["loc"][:3] == ("letters", 0, field)
-
-
-@pytest.mark.parametrize(
-    "letter",
-    [
-        pytest.param(SIGN | {"explanation": None}, id="sign-without-explanation"),
-        pytest.param(
-            LETTER | {"explanation": SIGN["explanation"]}, id="vowel-with-explanation"
-        ),
-    ],
-)
-def test_explanation_belongs_to_signs_only(letter: dict[str, Any]) -> None:
-    with pytest.raises(ValidationError, match="required for signs and only for signs"):
-        AlphabetSource.model_validate({"id": "ru", "letters": [letter]})
 
 
 @pytest.mark.parametrize("field", ["code", "position"])
@@ -163,13 +142,7 @@ def test_media_problems_are_reported(tmp_path: Path) -> None:
                         }
                     ],
                 },
-                SIGN
-                | {
-                    "explanation": {
-                        "pair": ["сел", "съел"],
-                        "sound": "letters/hard-explanation.mp3",
-                    }
-                },
+                SIGN | {"sound": "letters/hard.mp3"},
             ],
         }
     )
@@ -177,5 +150,5 @@ def test_media_problems_are_reported(tmp_path: Path) -> None:
     assert media_problems(alphabet, tmp_path) == [
         "words/arbuz.mp3: file not found",
         f"words/arbuz.webp: larger than {IMAGE_MAX_BYTES} bytes",
-        "letters/hard-explanation.mp3: file not found",
+        "letters/hard.mp3: file not found",
     ]

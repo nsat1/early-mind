@@ -41,10 +41,6 @@ class Letter(Base):
         UniqueConstraint("alphabet_id", "code"),
         UniqueConstraint("alphabet_id", "position"),
         CheckConstraint("position > 0", name="position_positive"),
-        CheckConstraint(
-            "(explanation_without_sign IS NULL) = (explanation_with_sign IS NULL)",
-            name="explanation_pair",
-        ),
     )
 
     letter_id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
@@ -65,9 +61,6 @@ class Letter(Base):
     )
     position: Mapped[int] = mapped_column(SmallInteger)
     sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
-    explanation_without_sign: Mapped[str | None] = mapped_column(String(WORD_LENGTH))
-    explanation_with_sign: Mapped[str | None] = mapped_column(String(WORD_LENGTH))
-    explanation_sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
     words: Mapped[list[Word]] = relationship(
         order_by="Word.position",
         cascade="all, delete-orphan",

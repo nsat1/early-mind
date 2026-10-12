@@ -52,11 +52,6 @@ class WordSource(SourceModel):
     sound: SoundPath | None = None
 
 
-class ExplanationSource(SourceModel):
-    pair: tuple[Example, Example]
-    sound: SoundPath | None = None
-
-
 class LetterSource(SourceModel):
     code: LetterCode
     symbol: Symbol
@@ -64,13 +59,6 @@ class LetterSource(SourceModel):
     position: Annotated[int, Field(gt=0)]
     sound: SoundPath | None = None
     words: Annotated[list[WordSource], Field(min_length=1)]
-    explanation: ExplanationSource | None = None
-
-    @model_validator(mode="after")
-    def check_explanation(self) -> Self:
-        if (self.kind is LetterKind.SIGN) != (self.explanation is not None):
-            raise ValueError("Explanation is required for signs and only for signs")
-        return self
 
 
 class AlphabetSource(SourceModel):
@@ -89,8 +77,6 @@ class AlphabetSource(SourceModel):
     def media(self) -> Iterator[tuple[str, int]]:
         for letter in self.letters:
             sounds = [letter.sound, *(word.sound for word in letter.words)]
-            if letter.explanation is not None:
-                sounds.append(letter.explanation.sound)
             images = [word.image for word in letter.words]
             yield from ((path, SOUND_MAX_BYTES) for path in sounds if path)
             yield from ((path, IMAGE_MAX_BYTES) for path in images if path)

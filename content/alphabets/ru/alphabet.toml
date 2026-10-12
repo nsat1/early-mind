@@ -404,7 +404,6 @@ code = "hard"
 symbol = "Ъ"
 kind = "sign"
 position = 28
-explanation = { pair = ["сел", "съел"] }
 
 [[letters.words]]
 text = "подъезд"
@@ -435,7 +434,6 @@ code = "soft"
 symbol = "Ь"
 kind = "sign"
 position = 30
-explanation = { pair = ["угол", "уголь"] }
 
 [[letters.words]]
 text = "лось"

@@ -3,7 +3,13 @@ import re
 import pytest
 
 from app.alphabet.models import LetterKind
-from app.alphabet.source import CONTENT_DIR, LetterSource, load_alphabet
+from app.alphabet.source import (
+    CONTENT_DIR,
+    MEDIA_DIR,
+    LetterSource,
+    load_alphabet,
+    media_problems,
+)
 
 ALPHABET = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 VOWELS = "АЕЁИОУЫЭЮЯ"
@@ -42,11 +48,32 @@ def test_kind_matches_letter(letter: LetterSource) -> None:
 @letters
 def test_words_illustrate_letter(letter: LetterSource) -> None:
     lowercase = letter.symbol.lower()
-    for word in letter.words:
-        assert WORD.fullmatch(word), word
+    texts = [word.text for word in letter.words]
+    for text in texts:
+        assert WORD.fullmatch(text), text
         if letter.symbol in NOT_INITIAL:
-            assert lowercase in word, word
+            assert lowercase in text, text
         else:
-            assert word.startswith(lowercase), word
-    assert len(set(letter.words)) == len(letter.words)
-    assert len(letter.words) <= 3
+            assert text.startswith(lowercase), text
+    assert len(set(texts)) == len(texts)
+    assert len(texts) <= 3
+
+
+@pytest.mark.parametrize(
+    "letter",
+    [letter for letter in RUSSIAN.letters if letter.explanation is not None],
+    ids=lambda letter: f"ru-{letter.code}",
+)
+def test_explanation_pair_differs_by_sign(letter: LetterSource) -> None:
+    assert letter.explanation is not None
+    without_sign, with_sign = letter.explanation.pair
+    lowercase = letter.symbol.lower()
+    assert WORD.fullmatch(without_sign), without_sign
+    assert WORD.fullmatch(with_sign), with_sign
+    assert lowercase not in without_sign
+    assert lowercase in with_sign
+    assert with_sign.replace(lowercase, "") == without_sign
+
+
+def test_media_files_exist_within_limits() -> None:
+    assert media_problems(RUSSIAN, MEDIA_DIR) == []

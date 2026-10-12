@@ -78,7 +78,11 @@ async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncRe
         )
 
     kept = [
-        {"letter_id": letter_ids[letter.code], "position": position, "example": word}
+        {
+            "letter_id": letter_ids[letter.code],
+            "position": position,
+            "example": word.text,
+        }
         for letter in source.letters
         for position, word in enumerate(letter.words, start=1)
     ]

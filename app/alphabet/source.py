@@ -1,5 +1,6 @@
 import tomllib
 from collections import Counter
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Annotated, Self
 
@@ -13,6 +14,9 @@ from app.alphabet.models import (
 )
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content" / "alphabets"
+MEDIA_DIR = CONTENT_DIR.parent / "media"
+SOUND_MAX_BYTES = 100 * 1024
+IMAGE_MAX_BYTES = 150 * 1024
 
 AlphabetId = Annotated[
     str, StringConstraints(pattern=r"^[a-z]+$", max_length=ALPHABET_ID_LENGTH)
@@ -22,21 +26,46 @@ LetterCode = Annotated[
 ]
 Symbol = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 Example = Annotated[str, StringConstraints(min_length=1, max_length=WORD_LENGTH)]
+SoundPath = Annotated[
+    str, StringConstraints(pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.mp3$")
+]
+ImagePath = Annotated[
+    str, StringConstraints(pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.(?:webp|svg)$")
+]
 
 
-class LetterSource(BaseModel):
+class SourceModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
+
+class WordSource(SourceModel):
+    text: Example
+    image: ImagePath | None = None
+    sound: SoundPath | None = None
+
+
+class ExplanationSource(SourceModel):
+    pair: tuple[Example, Example]
+    sound: SoundPath | None = None
+
+
+class LetterSource(SourceModel):
     code: LetterCode
     symbol: Symbol
     kind: LetterKind
     position: Annotated[int, Field(gt=0)]
-    words: Annotated[list[Example], Field(min_length=1)]
+    sound: SoundPath | None = None
+    words: Annotated[list[WordSource], Field(min_length=1)]
+    explanation: ExplanationSource | None = None
+
+    @model_validator(mode="after")
+    def check_explanation(self) -> Self:
+        if (self.kind is LetterKind.SIGN) != (self.explanation is not None):
+            raise ValueError("Explanation is required for signs and only for signs")
+        return self
 
 
-class AlphabetSource(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
+class AlphabetSource(SourceModel):
     id: AlphabetId
     letters: Annotated[list[LetterSource], Field(min_length=1)]
 
@@ -48,6 +77,26 @@ class AlphabetSource(BaseModel):
             if duplicates:
                 raise ValueError(f"Duplicate letter {field}: {duplicates}")
         return self
+
+    def media(self) -> Iterator[tuple[str, int]]:
+        for letter in self.letters:
+            sounds = [letter.sound, *(word.sound for word in letter.words)]
+            if letter.explanation is not None:
+                sounds.append(letter.explanation.sound)
+            images = [word.image for word in letter.words]
+            yield from ((path, SOUND_MAX_BYTES) for path in sounds if path)
+            yield from ((path, IMAGE_MAX_BYTES) for path in images if path)
+
+
+def media_problems(alphabet: AlphabetSource, media_dir: Path) -> list[str]:
+    problems = []
+    for path, max_bytes in alphabet.media():
+        file = media_dir / alphabet.id / path
+        if not file.is_file():
+            problems.append(f"{path}: file not found")
+        elif file.stat().st_size > max_bytes:
+            problems.append(f"{path}: larger than {max_bytes} bytes")
+    return problems
 
 
 def load_alphabet(path: Path) -> AlphabetSource:

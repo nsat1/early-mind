@@ -9,22 +9,52 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.alphabet.models import Letter, LetterKind
-from app.alphabet.source import CONTENT_DIR, AlphabetSource, LetterSource, load_alphabet
+from app.alphabet.source import (
+    CONTENT_DIR,
+    AlphabetSource,
+    LetterSource,
+    WordSource,
+    load_alphabet,
+)
 from app.alphabet.sync import SyncResult, main, sync_alphabet
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]
 
+Snapshot = list[tuple[str, str, LetterKind, int, list[str]]]
+
+
+def words(*texts: str) -> list[WordSource]:
+    return [WordSource(text=text) for text in texts]
+
+
 A = LetterSource(
-    code="a", symbol="А", kind=LetterKind.VOWEL, position=1, words=["арбуз", "аист"]
+    code="a",
+    symbol="А",
+    kind=LetterKind.VOWEL,
+    position=1,
+    words=words("арбуз", "аист"),
 )
 B = LetterSource(
-    code="b", symbol="Б", kind=LetterKind.CONSONANT, position=2, words=["банан"]
+    code="b", symbol="Б", kind=LetterKind.CONSONANT, position=2, words=words("банан")
 )
 ALPHABET = AlphabetSource(id="ru", letters=[A, B])
 RUSSIAN = CONTENT_DIR / "ru.toml"
 
 
-async def stored_alphabet(session: AsyncSession, alphabet_id: str) -> AlphabetSource:
+def snapshot(source: AlphabetSource) -> Snapshot:
+    return [
+        (
+            letter.code,
+            letter.symbol,
+            letter.kind,
+            letter.position,
+            [word.text for word in letter.words],
+        )
+        for letter in sorted(source.letters, key=lambda letter: letter.position)
+    ]
+
+
+async def stored(session: AsyncSession, alphabet_id: str) -> Snapshot:
     letters = await session.scalars(
         select(Letter)
         .where(Letter.alphabet_id == alphabet_id)
@@ -32,19 +62,16 @@ async def stored_alphabet(session: AsyncSession, alphabet_id: str) -> AlphabetSo
         .options(selectinload(Letter.words))
         .execution_options(populate_existing=True)
     )
-    return AlphabetSource(
-        id=alphabet_id,
-        letters=[
-            LetterSource(
-                code=letter.code,
-                symbol=letter.symbol,
-                kind=letter.kind,
-                position=letter.position,
-                words=[word.example for word in letter.words],
-            )
-            for letter in letters
-        ],
-    )
+    return [
+        (
+            letter.code,
+            letter.symbol,
+            letter.kind,
+            letter.position,
+            [word.example for word in letter.words],
+        )
+        for letter in letters
+    ]
 
 
 async def letter_ids(session: AsyncSession) -> dict[str, int]:
@@ -73,7 +100,7 @@ async def test_sync_loads_content_file(db_session: AsyncSession) -> None:
 
     rows = 1 + len(source.letters) + count_words(source)
     assert result == expected_result(source, changed=rows, removed=0)
-    assert await stored_alphabet(db_session, "ru") == source
+    assert await stored(db_session, "ru") == snapshot(source)
 
 
 async def test_repeated_sync_changes_nothing(db_session: AsyncSession) -> None:
@@ -92,14 +119,14 @@ async def test_sync_applies_changes(db_session: AsyncSession) -> None:
     changed = AlphabetSource(
         id="ru",
         letters=[
-            A.model_copy(update={"words": ["аист"]}),
-            B.model_copy(update={"kind": LetterKind.SIGN}),
+            A.model_copy(update={"words": words("аист")}),
+            B.model_copy(update={"kind": LetterKind.VOWEL}),
             LetterSource(
                 code="v",
                 symbol="В",
                 kind=LetterKind.CONSONANT,
                 position=3,
-                words=["вол"],
+                words=words("вол"),
             ),
         ],
     )
@@ -107,7 +134,7 @@ async def test_sync_applies_changes(db_session: AsyncSession) -> None:
     result = await sync_alphabet(db_session, changed)
 
     assert result == expected_result(changed, changed=4, removed=1)
-    assert await stored_alphabet(db_session, "ru") == changed
+    assert await stored(db_session, "ru") == snapshot(changed)
     assert ids.items() <= (await letter_ids(db_session)).items()
 
 
@@ -121,7 +148,7 @@ async def test_sync_keeps_letters_missing_from_content(
         result = await sync_alphabet(db_session, reduced)
 
     assert result == expected_result(reduced, changed=0, removed=0)
-    assert await stored_alphabet(db_session, "ru") == ALPHABET
+    assert await stored(db_session, "ru") == snapshot(ALPHABET)
     assert caplog.messages == ["ru: letters missing from content: b"]
 
 
@@ -140,7 +167,7 @@ async def test_sync_rejects_swapped_positions(db_session: AsyncSession) -> None:
             await sync_alphabet(db_session, swapped)
 
     assert raised.value.orig.diag.constraint_name == "uq_letters_alphabet_id_position"
-    assert await stored_alphabet(db_session, "ru") == ALPHABET
+    assert await stored(db_session, "ru") == snapshot(ALPHABET)
 
 
 @pytest.fixture

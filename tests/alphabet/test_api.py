@@ -1,46 +1,42 @@
+from typing import Any
+
 import pytest
 from httpx2 import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.alphabet.models import LetterKind
-from app.alphabet.source import AlphabetSource, LetterSource
+from app.alphabet.source import AlphabetSource
 from app.alphabet.sync import sync_alphabet
 from app.core.errors import PROBLEM_MEDIA_TYPE
 
 pytestmark = [pytest.mark.integration, pytest.mark.anyio]
 
-RUSSIAN = AlphabetSource(
-    id="ru",
-    letters=[
-        LetterSource(
-            code="soft", symbol="Ь", kind=LetterKind.SIGN, position=30, words=["конь"]
-        ),
-        LetterSource(
-            code="m",
-            symbol="М",
-            kind=LetterKind.CONSONANT,
-            position=14,
-            words=["мяч", "машина"],
-        ),
-        LetterSource(
-            code="a",
-            symbol="А",
-            kind=LetterKind.VOWEL,
-            position=1,
-            words=["арбуз", "автобус", "ананас"],
-        ),
-        LetterSource(
-            code="yo", symbol="Ё", kind=LetterKind.VOWEL, position=7, words=["ёж"]
-        ),
-    ],
+
+def letter(
+    code: str, symbol: str, kind: str, position: int, *texts: str
+) -> dict[str, Any]:
+    return {
+        "code": code,
+        "symbol": symbol,
+        "kind": kind,
+        "position": position,
+        "words": [{"text": text} for text in texts],
+    }
+
+
+RUSSIAN = AlphabetSource.model_validate(
+    {
+        "id": "ru",
+        "letters": [
+            letter("soft", "Ь", "sign", 30, "конь")
+            | {"explanation": {"pair": ["угол", "уголь"]}},
+            letter("m", "М", "consonant", 14, "мяч", "машина"),
+            letter("a", "А", "vowel", 1, "арбуз", "автобус", "ананас"),
+            letter("yo", "Ё", "vowel", 7, "ёж"),
+        ],
+    }
 )
-ENGLISH = AlphabetSource(
-    id="en",
-    letters=[
-        LetterSource(
-            code="a", symbol="A", kind=LetterKind.VOWEL, position=1, words=["apple"]
-        )
-    ],
+ENGLISH = AlphabetSource.model_validate(
+    {"id": "en", "letters": [letter("a", "A", "vowel", 1, "apple")]}
 )
 
 

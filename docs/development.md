@@ -21,8 +21,14 @@
 - Все тесты: `uv run --locked pytest`.
 - Интеграционные тесты создают отдельную БД `early_mind_test` в запущенной PostgreSQL и удаляют её после прогона; без БД они пропускаются.
 - Только быстрые тесты без БД: `uv run --locked pytest -m "not integration"`.
-- После изменения API обновите спецификацию `docs/api/openapi.json`: `uv run --locked python -m app.openapi`. Иначе упадёт тест её актуальности.
+- После изменения API обновите спецификацию `docs/api/openapi.json`: `uv run --locked python -m app.openapi`. Иначе упадёт тест её актуальности. Файл генерируется из кода, тексты правьте в коде.
 - Документация API по ветке `main` публикуется на [GitHub Pages](https://nsat1.github.io/early-mind/api/) после каждого успешного прогона CI.
+
+## Проверки перед коммитом
+
+- Установите хуки один раз: `uv run --locked pre-commit install`.
+- При `git commit` хуки запускают Ruff, проверяют файлы и обновляют `docs/api/openapi.json`. Если хук исправил файлы, коммит останавливается: добавьте исправления (`git add`) и повторите коммит.
+- Проверить весь репозиторий вручную: `uv run --locked pre-commit run --all-files`.
 
 ## Отчёт [Allure](https://allurereport.org/) (нужен Node.js)
 

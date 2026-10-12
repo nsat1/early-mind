@@ -43,7 +43,7 @@
 - **Бэкенд:** Python 3.14, FastAPI, Pydantic.
 - **Данные:** PostgreSQL 18, SQLAlchemy 2 (async), Alembic.
 - **Тесты:** pytest, интеграционные тесты на PostgreSQL, Allure Report.
-- **Инфраструктура:** Docker Compose, GitHub Actions, uv, Ruff.
+- **Инфраструктура:** Docker Compose, GitHub Actions, uv, Ruff, pre-commit.
 
 ## Ключевые решения
 

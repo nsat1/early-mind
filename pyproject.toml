@@ -17,6 +17,7 @@ dependencies = [
 dev = [
     "allure-pytest>=2.16.2,<3",
     "httpx2>=2,<3",
+    "pre-commit>=4.6.2,<5",
     "pytest>=9.1.1,<10",
     "ruff>=0.16.10,<0.17",
 ]

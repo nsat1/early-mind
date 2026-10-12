@@ -11,11 +11,15 @@ SIGNS = "ЪЬ"
 NOT_INITIAL = "ЪЫЬ"
 WORD = re.compile(r"[а-яё]+")
 
+RUSSIAN = load_alphabet(CONTENT_DIR / "ru.toml")
+
 letters = pytest.mark.parametrize(
-    "letter",
-    load_alphabet(CONTENT_DIR / "ru.toml").letters,
-    ids=lambda letter: f"ru-{letter.code}",
+    "letter", RUSSIAN.letters, ids=lambda letter: f"ru-{letter.code}"
 )
+
+
+def test_file_lists_whole_alphabet_in_order() -> None:
+    assert "".join(letter.symbol for letter in RUSSIAN.letters) == ALPHABET
 
 
 @letters
@@ -45,3 +49,4 @@ def test_words_illustrate_letter(letter: LetterSource) -> None:
         else:
             assert word.startswith(lowercase), word
     assert len(set(letter.words)) == len(letter.words)
+    assert len(letter.words) <= 3

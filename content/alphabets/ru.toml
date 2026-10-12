@@ -5,25 +5,228 @@ code = "a"
 symbol = "А"
 kind = "vowel"
 position = 1
-words = ["арбуз", "автобус", "ананас"]
+words = ["аист", "арбуз", "азбука"]
+
+[[letters]]
+code = "b"
+symbol = "Б"
+kind = "consonant"
+position = 2
+words = ["белка", "банан", "барабан"]
+
+[[letters]]
+code = "v"
+symbol = "В"
+kind = "consonant"
+position = 3
+words = ["волк", "виноград", "велосипед"]
+
+[[letters]]
+code = "g"
+symbol = "Г"
+kind = "consonant"
+position = 4
+words = ["гусь", "груша", "гитара"]
+
+[[letters]]
+code = "d"
+symbol = "Д"
+kind = "consonant"
+position = 5
+words = ["дятел", "дыня", "дом"]
+
+[[letters]]
+code = "ye"
+symbol = "Е"
+kind = "vowel"
+position = 6
+words = ["енот", "ежевика", "ель"]
+
+[[letters]]
+code = "yo"
+symbol = "Ё"
+kind = "vowel"
+position = 7
+words = ["ёж"]
+
+[[letters]]
+code = "zh"
+symbol = "Ж"
+kind = "consonant"
+position = 8
+words = ["жираф", "жимолость", "жилет"]
+
+[[letters]]
+code = "z"
+symbol = "З"
+kind = "consonant"
+position = 9
+words = ["заяц", "земляника", "зонт"]
+
+[[letters]]
+code = "i"
+symbol = "И"
+kind = "vowel"
+position = 10
+words = ["индюк", "изюм", "иголка"]
+
+[[letters]]
+code = "j"
+symbol = "Й"
+kind = "consonant"
+position = 11
+words = ["йогурт", "йога", "йод"]
+
+[[letters]]
+code = "k"
+symbol = "К"
+kind = "consonant"
+position = 12
+words = ["кот", "капуста", "корабль"]
+
+[[letters]]
+code = "l"
+symbol = "Л"
+kind = "consonant"
+position = 13
+words = ["лиса", "лимон", "лодка"]
 
 [[letters]]
 code = "m"
 symbol = "М"
 kind = "consonant"
 position = 14
-words = ["мяч", "машина", "медведь"]
+words = ["медведь", "малина", "машина"]
+
+[[letters]]
+code = "n"
+symbol = "Н"
+kind = "consonant"
+position = 15
+words = ["носорог", "нектарин", "ножницы"]
 
 [[letters]]
 code = "o"
 symbol = "О"
 kind = "vowel"
 position = 16
-words = ["облако", "ослик", "обруч"]
+words = ["ослик", "огурец", "одежда"]
+
+[[letters]]
+code = "p"
+symbol = "П"
+kind = "consonant"
+position = 17
+words = ["панда", "помидор", "поезд"]
+
+[[letters]]
+code = "r"
+symbol = "Р"
+kind = "consonant"
+position = 18
+words = ["рак", "редиска", "ракета"]
+
+[[letters]]
+code = "s"
+symbol = "С"
+kind = "consonant"
+position = 19
+words = ["слон", "слива", "самолёт"]
+
+[[letters]]
+code = "t"
+symbol = "Т"
+kind = "consonant"
+position = 20
+words = ["тигр", "торт", "трактор"]
 
 [[letters]]
 code = "u"
 symbol = "У"
 kind = "vowel"
 position = 21
-words = ["утка", "улитка", "утюг"]
+words = ["утка", "укроп", "утюг"]
+
+[[letters]]
+code = "f"
+symbol = "Ф"
+kind = "consonant"
+position = 22
+words = ["фламинго", "финик", "фонарь"]
+
+[[letters]]
+code = "kh"
+symbol = "Х"
+kind = "consonant"
+position = 23
+words = ["хомяк", "хлеб", "холодильник"]
+
+[[letters]]
+code = "ts"
+symbol = "Ц"
+kind = "consonant"
+position = 24
+words = ["цыплёнок", "цукини", "цепь"]
+
+[[letters]]
+code = "ch"
+symbol = "Ч"
+kind = "consonant"
+position = 25
+words = ["черепаха", "черешня", "чайник"]
+
+[[letters]]
+code = "sh"
+symbol = "Ш"
+kind = "consonant"
+position = 26
+words = ["шмель", "шоколад", "шар"]
+
+[[letters]]
+code = "shch"
+symbol = "Щ"
+kind = "consonant"
+position = 27
+words = ["щенок", "щавель", "щётка"]
+
+[[letters]]
+code = "hard"
+symbol = "Ъ"
+kind = "sign"
+position = 28
+words = ["подъезд", "объектив", "объявление"]
+
+[[letters]]
+code = "y"
+symbol = "Ы"
+kind = "vowel"
+position = 29
+words = ["мышь", "сыр", "лыжи"]
+
+[[letters]]
+code = "soft"
+symbol = "Ь"
+kind = "sign"
+position = 30
+words = ["лось", "морковь", "кровать"]
+
+[[letters]]
+code = "e"
+symbol = "Э"
+kind = "vowel"
+position = 31
+words = ["эму", "эскимо", "экскаватор"]
+
+[[letters]]
+code = "yu"
+symbol = "Ю"
+kind = "vowel"
+position = 32
+words = ["юбка", "юла", "юрта"]
+
+[[letters]]
+code = "ya"
+symbol = "Я"
+kind = "vowel"
+position = 33
+words = ["ящерица", "яблоко", "якорь"]

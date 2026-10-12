@@ -34,6 +34,19 @@
 | `example` | `VARCHAR(50)` | Да | — | Слово-пример строчными буквами, например `арбуз` |
 | `position` | `SMALLINT` | Да | `ck_words_position_positive`: больше 0. Уникальна для буквы: `uq_words_letter_id_position` | Порядок слова в карточке буквы |
 
+### analytics_events — события аналитики
+
+| Поле | Тип | Обязательное | Ограничения | Описание |
+|---|---|---|---|---|
+| `analytics_event_id` | `BIGINT`, `GENERATED ALWAYS AS IDENTITY` | Да | Первичный ключ `pk_analytics_events` | Внутренний идентификатор, в API не передаётся |
+| `name` | `VARCHAR(20)` | Да | `ck_analytics_events_name`: `app_opened`, `session_finished` или `answer_given` | Имя события из [каталога аналитики](../requirements/analytics.md) |
+| `schema_version` | `SMALLINT` | Да | `ck_analytics_events_schema_version_positive`: больше 0 | Версия схемы полей события |
+| `app_version` | `VARCHAR(20)` | Да | — | Версия веб-приложения, отправившего событие |
+| `properties` | `JSONB` | Да | Проверяются API по каталогу | Поля события |
+| `received_at` | `TIMESTAMPTZ` | Да | По умолчанию `date_trunc('hour', now())` | Время получения, округлённое до часа |
+
+Индекс `ix_analytics_events_name_received_at` по `(name, received_at)` ускоряет расчёт метрик и удаление старых событий.
+
 Служебная таблица `alembic_version` хранит номер последней применённой миграции.
 
 ## Где хранятся данные релиза 1
@@ -42,6 +55,7 @@
 |---|---|---|
 | Алфавиты, буквы, слова | PostgreSQL | Файлы контента в `content/alphabets`, переносятся в БД синхронизацией |
 | Изученные буквы, статистика букв, история сессий | Хранилище браузера на устройстве | Веб-приложение |
+| События аналитики | PostgreSQL, 12 месяцев | Веб-приложение отправляет их в API |
 
 ## Планируемые изменения
 

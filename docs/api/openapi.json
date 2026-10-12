@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Early Mind API",
-    "summary": "API платформы раннего обучения Early Mind",
-    "description": "Контент азбуки для веб-приложения. Ошибки возвращаются в формате Problem Details (RFC 9457) с типом `application/problem+json`.",
+    "summary": "API платформы обучения Early Mind",
+    "description": "Ошибки возвращаются в формате Problem Details (RFC 9457) с типом `application/problem+json`.",
     "version": "0.1.0"
   },
   "paths": {
@@ -84,13 +84,13 @@
               "type": "string",
               "maxLength": 10,
               "pattern": "^[a-z]+$",
-              "description": "Код алфавита — код языка по ISO 639-1",
+              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
               "examples": [
                 "ru"
               ],
               "title": "Alphabet Id"
             },
-            "description": "Код алфавита — код языка по ISO 639-1"
+            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
           },
           {
             "name": "kind",
@@ -201,13 +201,13 @@
               "type": "string",
               "maxLength": 10,
               "pattern": "^[a-z]+$",
-              "description": "Код алфавита — код языка по ISO 639-1",
+              "description": "Код алфавита, пример - ru (код языка по ISO 639-1)",
               "examples": [
                 "ru"
               ],
               "title": "Alphabet Id"
             },
-            "description": "Код алфавита — код языка по ISO 639-1"
+            "description": "Код алфавита, пример - ru (код языка по ISO 639-1)"
           },
           {
             "name": "code",
@@ -294,10 +294,253 @@
           }
         }
       }
+    },
+    "/api/v1/analytics/events": {
+      "post": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Принять события аналитики",
+        "description": "Сохраняет обезличенные события. Время получения фиксируется с точностью до часа.",
+        "operationId": "record_events",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AppOpened"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SessionFinished"
+                    },
+                    {
+                      "$ref": "#/components/schemas/AnswerGiven"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "name",
+                    "mapping": {
+                      "app_opened": "#/components/schemas/AppOpened",
+                      "session_finished": "#/components/schemas/SessionFinished",
+                      "answer_given": "#/components/schemas/AnswerGiven"
+                    }
+                  }
+                },
+                "type": "array",
+                "maxItems": 50,
+                "minItems": 1,
+                "title": "Events",
+                "description": "Пачка от 1 до 50 событий по каталогу аналитики. Тип содержимого — `application/json`, в том числе при отправке через `navigator.sendBeacon`."
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "События приняты"
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных недоступна",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AnswerGiven": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version",
+            "description": "Версия схемы полей события"
+          },
+          "app_version": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "App Version",
+            "description": "Версия веб-приложения",
+            "examples": [
+              "1.0.0"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "const": "answer_given",
+            "title": "Name"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/AnswerGivenProperties"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "app_version",
+          "name",
+          "properties"
+        ],
+        "title": "AnswerGiven"
+      },
+      "AnswerGivenProperties": {
+        "properties": {
+          "alphabet_id": {
+            "type": "string",
+            "maxLength": 10,
+            "pattern": "^[a-z]+$",
+            "title": "Alphabet Id",
+            "description": "Алфавит задания",
+            "examples": [
+              "ru"
+            ]
+          },
+          "letter_code": {
+            "type": "string",
+            "maxLength": 20,
+            "pattern": "^[a-z]+$",
+            "title": "Letter Code",
+            "description": "Буква, которую нужно было найти",
+            "examples": [
+              "m"
+            ]
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "sound",
+              "picture"
+            ],
+            "title": "Task Type",
+            "description": "Тип задания: по звуку или по картинке"
+          },
+          "correct": {
+            "type": "boolean",
+            "title": "Correct",
+            "description": "Верный ли ответ"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "alphabet_id",
+          "letter_code",
+          "task_type",
+          "correct"
+        ],
+        "title": "AnswerGivenProperties"
+      },
+      "AppOpened": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version",
+            "description": "Версия схемы полей события"
+          },
+          "app_version": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "App Version",
+            "description": "Версия веб-приложения",
+            "examples": [
+              "1.0.0"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "const": "app_opened",
+            "title": "Name"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/AppOpenedProperties"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "app_version",
+          "name",
+          "properties"
+        ],
+        "title": "AppOpened"
+      },
+      "AppOpenedProperties": {
+        "properties": {
+          "days_since_first_visit": {
+            "type": "string",
+            "enum": [
+              "0",
+              "1",
+              "2-6",
+              "7-13",
+              "14-29",
+              "30+"
+            ],
+            "title": "Days Since First Visit",
+            "description": "Диапазон дней с первого визита"
+          },
+          "first_visit_week": {
+            "type": "string",
+            "pattern": "^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$",
+            "title": "First Visit Week",
+            "description": "Неделя первого визита по ISO 8601 — когорта",
+            "examples": [
+              "2026-W42"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "days_since_first_visit",
+          "first_visit_week"
+        ],
+        "title": "AppOpenedProperties"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -411,7 +654,7 @@
           "in": {
             "type": "string",
             "title": "In",
-            "description": "Где передан параметр: `path` или `query`",
+            "description": "Где передан параметр: `path`, `query` или `body`",
             "examples": [
               "path"
             ]
@@ -517,6 +760,116 @@
           "status"
         ],
         "title": "Problem"
+      },
+      "SessionFinished": {
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Schema Version",
+            "description": "Версия схемы полей события"
+          },
+          "app_version": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "App Version",
+            "description": "Версия веб-приложения",
+            "examples": [
+              "1.0.0"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "const": "session_finished",
+            "title": "Name"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/SessionFinishedProperties"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schema_version",
+          "app_version",
+          "name",
+          "properties"
+        ],
+        "title": "SessionFinished"
+      },
+      "SessionFinishedProperties": {
+        "properties": {
+          "duration_seconds": {
+            "type": "integer",
+            "multipleOf": 10.0,
+            "maximum": 7200.0,
+            "minimum": 0.0,
+            "title": "Duration Seconds",
+            "description": "Длительность сессии без бездействия, округлена до 10 секунд",
+            "examples": [
+              420
+            ]
+          },
+          "cards_opened": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cards Opened",
+            "description": "Число открытий карточек букв",
+            "examples": [
+              6
+            ]
+          },
+          "answers": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Answers",
+            "description": "Число ответов",
+            "examples": [
+              10
+            ]
+          },
+          "correct_answers": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Correct Answers",
+            "description": "Число верных ответов",
+            "examples": [
+              8
+            ]
+          },
+          "learned_letters": {
+            "type": "integer",
+            "maximum": 33.0,
+            "minimum": 0.0,
+            "title": "Learned Letters",
+            "description": "Число изученных букв",
+            "examples": [
+              12
+            ]
+          },
+          "strong_letters": {
+            "type": "integer",
+            "maximum": 33.0,
+            "minimum": 0.0,
+            "title": "Strong Letters",
+            "description": "Число сильных букв",
+            "examples": [
+              5
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "duration_seconds",
+          "cards_opened",
+          "answers",
+          "correct_answers",
+          "learned_letters",
+          "strong_letters"
+        ],
+        "title": "SessionFinishedProperties"
       }
     }
   },
@@ -524,6 +877,10 @@
     {
       "name": "alphabet",
       "description": "Азбука: буквы алфавита и слова-примеры"
+    },
+    {
+      "name": "analytics",
+      "description": "Обезличенные события аналитики"
     },
     {
       "name": "health",

@@ -4,6 +4,7 @@ from operator import attrgetter
 from fastapi import FastAPI
 
 from app.alphabet.router import router as alphabet_router
+from app.analytics.router import router as analytics_router
 from app.core.config import Settings
 from app.core.errors import register_problem_details
 from app.db.lifespan import lifespan
@@ -11,6 +12,7 @@ from app.health import router as health_router
 
 OPENAPI_TAGS = [
     {"name": "alphabet", "description": "Азбука: буквы алфавита и слова-примеры"},
+    {"name": "analytics", "description": "Обезличенные события аналитики"},
     {"name": "health", "description": "Проверки работоспособности для мониторинга"},
 ]
 
@@ -18,10 +20,10 @@ OPENAPI_TAGS = [
 def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="Early Mind API",
-        summary="API платформы раннего обучения Early Mind",
+        summary="API платформы обучения Early Mind",
         description=(
-            "Контент азбуки для веб-приложения. Ошибки возвращаются в формате "
-            "Problem Details (RFC 9457) с типом `application/problem+json`."
+            "Ошибки возвращаются в формате Problem Details (RFC 9457) с типом "
+            "`application/problem+json`."
         ),
         openapi_tags=OPENAPI_TAGS,
         generate_unique_id_function=attrgetter("name"),
@@ -30,4 +32,5 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_problem_details(app)
     app.include_router(health_router)
     app.include_router(alphabet_router)
+    app.include_router(analytics_router)
     return app

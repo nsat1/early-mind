@@ -27,7 +27,7 @@ class ParameterError(BaseModel):
         str,
         Field(
             serialization_alias="in",
-            description="Где передан параметр: `path` или `query`",
+            description="Где передан параметр: `path`, `query` или `body`",
             examples=["path"],
         ),
     ]

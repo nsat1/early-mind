@@ -16,7 +16,10 @@ LETTER_NOT_FOUND = "Alphabet or letter not found"
 
 AlphabetPath = Annotated[
     AlphabetId,
-    Path(description="Код алфавита — код языка по ISO 639-1", examples=["ru"]),
+    Path(
+        description="Код алфавита, пример - ru (код языка по ISO 639-1)",
+        examples=["ru"],
+    ),
 ]
 CodePath = Annotated[
     LetterCode,

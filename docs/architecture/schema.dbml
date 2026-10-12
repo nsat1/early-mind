@@ -27,5 +27,18 @@ Table words {
   }
 }
 
+Table analytics_events {
+  analytics_event_id bigint [pk, increment]
+  name varchar(20) [not null]
+  schema_version smallint [not null]
+  app_version varchar(20) [not null]
+  properties jsonb [not null]
+  received_at timestamptz [not null, default: `date_trunc('hour', now())`]
+
+  indexes {
+    (name, received_at) [name: 'ix_analytics_events_name_received_at']
+  }
+}
+
 Ref fk_letters_alphabet_id_alphabets: letters.alphabet_id > alphabets.alphabet_id [delete: cascade]
 Ref fk_words_letter_id_letters: words.letter_id > letters.letter_id [delete: cascade]

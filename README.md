@@ -32,6 +32,7 @@
 | [Бизнес-правила: релиз 1](docs/requirements/business-rules.md) | Правила прогресса, статистики, сессий и проверочных заданий |
 | [Функциональные требования: релиз 1](docs/requirements/functional-requirements.md) | Функциональные требования с приоритетами и трассировкой |
 | [Нефункциональные требования](docs/requirements/non-functional-requirements.md) | Производительность, надёжность, безопасность, требования закона, удобство, совместимость |
+| [Аналитика: релиз 1](docs/requirements/analytics.md) | Метрики продукта и каталог обезличенных событий |
 | [Архитектура: модель C4](docs/architecture/c4.md) | Контекст, контейнеры, роли БД, интерфейсы API |
 | [Модель данных](docs/architecture/data-model.md) | ER-диаграмма и словарь данных |
 | [Спецификация API](docs/api/openapi.json) | Контракт REST API в формате OpenAPI 3.1, [документация на GitHub Pages](https://nsat1.github.io/early-mind/api/) |

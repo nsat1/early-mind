@@ -9,6 +9,10 @@ Table letters {
   symbol varchar(1) [not null]
   kind varchar(9) [not null]
   position smallint [not null]
+  sound varchar(111)
+  explanation_without_sign varchar(50)
+  explanation_with_sign varchar(50)
+  explanation_sound varchar(111)
 
   indexes {
     (alphabet_id, code) [unique, name: 'uq_letters_alphabet_id_code']
@@ -21,6 +25,8 @@ Table words {
   letter_id integer [not null]
   example varchar(50) [not null]
   position smallint [not null]
+  image varchar(111)
+  sound varchar(111)
 
   indexes {
     (letter_id, position) [unique, name: 'uq_words_letter_id_position']

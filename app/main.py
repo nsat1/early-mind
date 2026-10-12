@@ -1,9 +1,12 @@
 from functools import partial
 from operator import attrgetter
+from pathlib import Path
 
 from fastapi import FastAPI
 
+from app.alphabet.media import MEDIA_URL, MediaFiles
 from app.alphabet.router import router as alphabet_router
+from app.alphabet.source import CONTENT_DIR
 from app.analytics.router import router as analytics_router
 from app.core.config import Settings
 from app.core.errors import register_problem_details
@@ -17,7 +20,9 @@ OPENAPI_TAGS = [
 ]
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, content_dir: Path = CONTENT_DIR
+) -> FastAPI:
     app = FastAPI(
         title="Early Mind API",
         summary="API платформы обучения Early Mind",
@@ -33,4 +38,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health_router)
     app.include_router(alphabet_router)
     app.include_router(analytics_router)
+    app.mount(
+        MEDIA_URL, MediaFiles(directory=content_dir, check_dir=False), name="media"
+    )
     return app

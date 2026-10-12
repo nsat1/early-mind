@@ -9,12 +9,13 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_vali
 from app.alphabet.models import (
     ALPHABET_ID_LENGTH,
     LETTER_CODE_LENGTH,
+    MEDIA_PATH_LENGTH,
     WORD_LENGTH,
     LetterKind,
 )
 
 CONTENT_DIR = Path(__file__).resolve().parents[2] / "content" / "alphabets"
-MEDIA_DIR = CONTENT_DIR.parent / "media"
+ALPHABET_FILE = "alphabet.toml"
 SOUND_MAX_BYTES = 100 * 1024
 IMAGE_MAX_BYTES = 150 * 1024
 
@@ -27,10 +28,17 @@ LetterCode = Annotated[
 Symbol = Annotated[str, StringConstraints(min_length=1, max_length=1)]
 Example = Annotated[str, StringConstraints(min_length=1, max_length=WORD_LENGTH)]
 SoundPath = Annotated[
-    str, StringConstraints(pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.mp3$")
+    str,
+    StringConstraints(
+        pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.mp3$", max_length=MEDIA_PATH_LENGTH
+    ),
 ]
 ImagePath = Annotated[
-    str, StringConstraints(pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.(?:webp|svg)$")
+    str,
+    StringConstraints(
+        pattern=r"^[a-z0-9]+(?:[-/][a-z0-9]+)*\.(?:webp|svg)$",
+        max_length=MEDIA_PATH_LENGTH,
+    ),
 ]
 
 
@@ -88,15 +96,19 @@ class AlphabetSource(SourceModel):
             yield from ((path, IMAGE_MAX_BYTES) for path in images if path)
 
 
-def media_problems(alphabet: AlphabetSource, media_dir: Path) -> list[str]:
+def media_problems(alphabet: AlphabetSource, alphabet_dir: Path) -> list[str]:
     problems = []
     for path, max_bytes in alphabet.media():
-        file = media_dir / alphabet.id / path
+        file = alphabet_dir / path
         if not file.is_file():
             problems.append(f"{path}: file not found")
         elif file.stat().st_size > max_bytes:
             problems.append(f"{path}: larger than {max_bytes} bytes")
     return problems
+
+
+def alphabet_files(content_dir: Path = CONTENT_DIR) -> list[Path]:
+    return sorted(content_dir.glob(f"*/{ALPHABET_FILE}"))
 
 
 def load_alphabet(path: Path) -> AlphabetSource:

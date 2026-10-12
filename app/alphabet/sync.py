@@ -1,18 +1,38 @@
 import asyncio
+import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import Executable, delete, select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.alphabet.models import Alphabet, Letter, Word
-from app.alphabet.source import CONTENT_DIR, AlphabetSource, load_alphabet
+from app.alphabet.models import MEDIA_VERSION_LENGTH, Alphabet, Letter, Word
+from app.alphabet.source import (
+    CONTENT_DIR,
+    AlphabetSource,
+    LetterSource,
+    alphabet_files,
+    load_alphabet,
+    media_problems,
+)
 from app.core.config import Settings
 from app.db.session import create_database
 
 logger = logging.getLogger(__name__)
+
+LETTER_FIELDS = (
+    "symbol",
+    "kind",
+    "position",
+    "sound",
+    "explanation_without_sign",
+    "explanation_with_sign",
+    "explanation_sound",
+)
+WORD_FIELDS = ("example", "image", "sound")
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,7 +54,37 @@ async def count_rows(session: AsyncSession, statement: Executable) -> int:
     return len((await session.scalars(statement)).all())
 
 
-async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncResult:
+def versioned(files: Path, path: str | None) -> str | None:
+    if path is None:
+        return None
+    digest = hashlib.sha256((files / path).read_bytes()).hexdigest()
+    return f"{path}?v={digest[:MEDIA_VERSION_LENGTH]}"
+
+
+def letter_row(letter: LetterSource, files: Path) -> dict[str, Any]:
+    explanation = letter.explanation
+    return {
+        "code": letter.code,
+        "symbol": letter.symbol,
+        "kind": letter.kind,
+        "position": letter.position,
+        "sound": versioned(files, letter.sound),
+        "explanation_without_sign": explanation.pair[0] if explanation else None,
+        "explanation_with_sign": explanation.pair[1] if explanation else None,
+        "explanation_sound": (
+            versioned(files, explanation.sound) if explanation else None
+        ),
+    }
+
+
+async def sync_alphabet(
+    session: AsyncSession, source: AlphabetSource, alphabet_dir: Path | None = None
+) -> SyncResult:
+    files = alphabet_dir if alphabet_dir is not None else CONTENT_DIR / source.id
+    problems = media_problems(source, files)
+    if problems:
+        raise ValueError(f"{source.id}: invalid media: {'; '.join(problems)}")
+
     changed = await count_rows(
         session,
         insert(Alphabet)
@@ -45,24 +95,19 @@ async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncRe
 
     letters = insert(Letter).values(
         [
-            {
-                "alphabet_id": source.id,
-                "code": letter.code,
-                "symbol": letter.symbol,
-                "kind": letter.kind,
-                "position": letter.position,
-            }
+            {"alphabet_id": source.id, **letter_row(letter, files)}
             for letter in source.letters
         ]
     )
-    new = letters.excluded
     changed += await count_rows(
         session,
         letters.on_conflict_do_update(
             index_elements=[Letter.alphabet_id, Letter.code],
-            set_={"symbol": new.symbol, "kind": new.kind, "position": new.position},
-            where=tuple_(Letter.symbol, Letter.kind, Letter.position).is_distinct_from(
-                tuple_(new.symbol, new.kind, new.position)
+            set_={field: letters.excluded[field] for field in LETTER_FIELDS},
+            where=tuple_(
+                *(getattr(Letter, field) for field in LETTER_FIELDS)
+            ).is_distinct_from(
+                tuple_(*(letters.excluded[field] for field in LETTER_FIELDS))
             ),
         ).returning(Letter.letter_id),
     )
@@ -82,6 +127,8 @@ async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncRe
             "letter_id": letter_ids[letter.code],
             "position": position,
             "example": word.text,
+            "image": versioned(files, word.image),
+            "sound": versioned(files, word.sound),
         }
         for letter in source.letters
         for position, word in enumerate(letter.words, start=1)
@@ -91,8 +138,12 @@ async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncRe
         session,
         words.on_conflict_do_update(
             index_elements=[Word.letter_id, Word.position],
-            set_={"example": words.excluded.example},
-            where=Word.example.is_distinct_from(words.excluded.example),
+            set_={field: words.excluded[field] for field in WORD_FIELDS},
+            where=tuple_(
+                *(getattr(Word, field) for field in WORD_FIELDS)
+            ).is_distinct_from(
+                tuple_(*(words.excluded[field] for field in WORD_FIELDS))
+            ),
         ).returning(Word.word_id),
     )
     removed = await count_rows(
@@ -120,11 +171,16 @@ async def sync_alphabet(session: AsyncSession, source: AlphabetSource) -> SyncRe
 async def sync_content(
     settings: Settings, content_dir: Path = CONTENT_DIR
 ) -> list[SyncResult]:
-    sources = [load_alphabet(path) for path in sorted(content_dir.glob("*.toml"))]
+    sources = [
+        (load_alphabet(path), path.parent) for path in alphabet_files(content_dir)
+    ]
     engine, sessions = create_database(settings)
     try:
         async with sessions.begin() as session:
-            return [await sync_alphabet(session, source) for source in sources]
+            return [
+                await sync_alphabet(session, source, alphabet_dir)
+                for source, alphabet_dir in sources
+            ]
     finally:
         await engine.dispose()
 

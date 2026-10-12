@@ -4,8 +4,8 @@ import pytest
 
 from app.alphabet.models import LetterKind
 from app.alphabet.source import (
+    ALPHABET_FILE,
     CONTENT_DIR,
-    MEDIA_DIR,
     LetterSource,
     load_alphabet,
     media_problems,
@@ -17,7 +17,7 @@ SIGNS = "ЪЬ"
 NOT_INITIAL = "ЪЫЬ"
 WORD = re.compile(r"[а-яё]+")
 
-RUSSIAN = load_alphabet(CONTENT_DIR / "ru.toml")
+RUSSIAN = load_alphabet(CONTENT_DIR / "ru" / ALPHABET_FILE)
 
 letters = pytest.mark.parametrize(
     "letter", RUSSIAN.letters, ids=lambda letter: f"ru-{letter.code}"
@@ -76,4 +76,4 @@ def test_explanation_pair_differs_by_sign(letter: LetterSource) -> None:
 
 
 def test_media_files_exist_within_limits() -> None:
-    assert media_problems(RUSSIAN, MEDIA_DIR) == []
+    assert media_problems(RUSSIAN, CONTENT_DIR / "ru") == []

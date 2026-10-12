@@ -1,3 +1,5 @@
+import hashlib
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -28,8 +30,24 @@ RUSSIAN = AlphabetSource.model_validate(
         "id": "ru",
         "letters": [
             letter("soft", "Ь", "sign", 30, "конь")
-            | {"explanation": {"pair": ["угол", "уголь"]}},
-            letter("m", "М", "consonant", 14, "мяч", "машина"),
+            | {
+                "explanation": {
+                    "pair": ["угол", "уголь"],
+                    "sound": "letters/soft-explanation.mp3",
+                }
+            },
+            letter("m", "М", "consonant", 14)
+            | {
+                "sound": "letters/m.mp3",
+                "words": [
+                    {
+                        "text": "мяч",
+                        "image": "words/myach.webp",
+                        "sound": "words/myach.mp3",
+                    },
+                    {"text": "машина"},
+                ],
+            },
             letter("a", "А", "vowel", 1, "арбуз", "автобус", "ананас"),
             letter("yo", "Ё", "vowel", 7, "ёж"),
         ],
@@ -40,10 +58,26 @@ ENGLISH = AlphabetSource.model_validate(
 )
 
 
+MEDIA = {
+    "letters/m.mp3": b"m sound",
+    "letters/soft-explanation.mp3": b"soft sign explanation",
+    "words/myach.webp": b"ball image",
+    "words/myach.mp3": b"ball sound",
+}
+
+
+def media_url(path: str) -> str:
+    version = hashlib.sha256(MEDIA[path]).hexdigest()[:8]
+    return f"/media/ru/{path}?v={version}"
+
+
 @pytest.fixture(autouse=True)
-async def alphabets(db_session: AsyncSession) -> None:
-    for source in (RUSSIAN, ENGLISH):
-        await sync_alphabet(db_session, source)
+async def alphabets(db_session: AsyncSession, tmp_path: Path) -> None:
+    for path, content in MEDIA.items():
+        (tmp_path / path).parent.mkdir(exist_ok=True)
+        (tmp_path / path).write_bytes(content)
+    await sync_alphabet(db_session, RUSSIAN, tmp_path)
+    await sync_alphabet(db_session, ENGLISH)
 
 
 async def test_list_letters_orders_by_position(api_client: AsyncClient) -> None:
@@ -102,10 +136,25 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
                 "code": "a",
                 "symbol": "А",
                 "kind": "vowel",
-                "words": ["арбуз", "автобус", "ананас"],
+                "sound_url": None,
+                "explanation": None,
+                "words": [
+                    {"text": text, "image_url": None, "sound_url": None}
+                    for text in ("арбуз", "автобус", "ананас")
+                ],
             },
         ),
-        ("en", {"code": "a", "symbol": "A", "kind": "vowel", "words": ["apple"]}),
+        (
+            "en",
+            {
+                "code": "a",
+                "symbol": "A",
+                "kind": "vowel",
+                "sound_url": None,
+                "explanation": None,
+                "words": [{"text": "apple", "image_url": None, "sound_url": None}],
+            },
+        ),
     ],
 )
 async def test_get_letter_returns_words(
@@ -116,6 +165,37 @@ async def test_get_letter_returns_words(
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
     assert response.json() == expected
+
+
+async def test_get_letter_returns_media_urls(api_client: AsyncClient) -> None:
+    response = await api_client.get("/api/v1/alphabets/ru/letters/m")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "code": "m",
+        "symbol": "М",
+        "kind": "consonant",
+        "sound_url": media_url("letters/m.mp3"),
+        "explanation": None,
+        "words": [
+            {
+                "text": "мяч",
+                "image_url": media_url("words/myach.webp"),
+                "sound_url": media_url("words/myach.mp3"),
+            },
+            {"text": "машина", "image_url": None, "sound_url": None},
+        ],
+    }
+
+
+async def test_get_sign_returns_explanation(api_client: AsyncClient) -> None:
+    response = await api_client.get("/api/v1/alphabets/ru/letters/soft")
+
+    assert response.status_code == 200
+    assert response.json()["explanation"] == {
+        "pair": ["угол", "уголь"],
+        "sound_url": media_url("letters/soft-explanation.mp3"),
+    }
 
 
 @pytest.mark.parametrize(

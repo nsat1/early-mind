@@ -3,8 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Path, Query
 
 from app.alphabet import repository
+from app.alphabet.media import media_url
 from app.alphabet.models import LetterKind
-from app.alphabet.schemas import LetterDetail, LetterSummary
+from app.alphabet.schemas import (
+    Explanation,
+    LetterDetail,
+    LetterSummary,
+    WordExample,
+)
 from app.alphabet.source import AlphabetId, LetterCode
 from app.core.errors import COMMON_PROBLEMS, problem_responses
 from app.db.dependencies import DbSession
@@ -72,9 +78,24 @@ async def get_letter(
     letter = await repository.get_letter(session, alphabet_id, code)
     if letter is None:
         raise HTTPException(status_code=404, detail=LETTER_NOT_FOUND)
+    explanation = None
+    if letter.explanation_without_sign and letter.explanation_with_sign:
+        explanation = Explanation(
+            pair=(letter.explanation_without_sign, letter.explanation_with_sign),
+            sound_url=media_url(alphabet_id, letter.explanation_sound),
+        )
     return LetterDetail(
         code=letter.code,
         symbol=letter.symbol,
         kind=letter.kind,
-        words=[word.example for word in letter.words],
+        sound_url=media_url(alphabet_id, letter.sound),
+        explanation=explanation,
+        words=[
+            WordExample(
+                text=word.example,
+                image_url=media_url(alphabet_id, word.image),
+                sound_url=media_url(alphabet_id, word.sound),
+            )
+            for word in letter.words
+        ],
     )

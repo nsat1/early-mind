@@ -16,6 +16,9 @@ from app.db.base import Base
 ALPHABET_ID_LENGTH = 10
 LETTER_CODE_LENGTH = 20
 WORD_LENGTH = 50
+MEDIA_PATH_LENGTH = 100
+MEDIA_VERSION_LENGTH = 8
+MEDIA_LENGTH = MEDIA_PATH_LENGTH + len("?v=") + MEDIA_VERSION_LENGTH
 
 
 class LetterKind(StrEnum):
@@ -38,6 +41,10 @@ class Letter(Base):
         UniqueConstraint("alphabet_id", "code"),
         UniqueConstraint("alphabet_id", "position"),
         CheckConstraint("position > 0", name="position_positive"),
+        CheckConstraint(
+            "(explanation_without_sign IS NULL) = (explanation_with_sign IS NULL)",
+            name="explanation_pair",
+        ),
     )
 
     letter_id: Mapped[int] = mapped_column(Identity(always=True), primary_key=True)
@@ -57,6 +64,10 @@ class Letter(Base):
         )
     )
     position: Mapped[int] = mapped_column(SmallInteger)
+    sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
+    explanation_without_sign: Mapped[str | None] = mapped_column(String(WORD_LENGTH))
+    explanation_with_sign: Mapped[str | None] = mapped_column(String(WORD_LENGTH))
+    explanation_sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
     words: Mapped[list[Word]] = relationship(
         order_by="Word.position",
         cascade="all, delete-orphan",
@@ -78,3 +89,5 @@ class Word(Base):
     )
     example: Mapped[str] = mapped_column(String(WORD_LENGTH))
     position: Mapped[int] = mapped_column(SmallInteger)
+    image: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
+    sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))

@@ -541,6 +541,52 @@
         ],
         "title": "AppOpenedProperties"
       },
+      "Explanation": {
+        "properties": {
+          "pair": {
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Pair",
+            "description": "Пара слов, которые отличаются только знаком",
+            "examples": [
+              [
+                "сел",
+                "съел"
+              ]
+            ]
+          },
+          "sound_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sound Url",
+            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "pair",
+          "sound_url"
+        ],
+        "title": "Explanation"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -581,20 +627,39 @@
               "consonant"
             ]
           },
+          "sound_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sound Url",
+            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+            ]
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Explanation"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Пояснение роли знака. Есть только у Ъ и Ь"
+          },
           "words": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/WordExample"
             },
             "type": "array",
             "title": "Words",
-            "description": "Слова-примеры в порядке показа",
-            "examples": [
-              [
-                "мяч",
-                "машина",
-                "медведь"
-              ]
-            ]
+            "description": "Слова-примеры в порядке показа"
           }
         },
         "type": "object",
@@ -602,6 +667,8 @@
           "code",
           "symbol",
           "kind",
+          "sound_url",
+          "explanation",
           "words"
         ],
         "title": "LetterDetail"
@@ -870,6 +937,55 @@
           "strong_letters"
         ],
         "title": "SessionFinishedProperties"
+      },
+      "WordExample": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "description": "Слово",
+            "examples": [
+              "медведь"
+            ]
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+            ]
+          },
+          "sound_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sound Url",
+            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "image_url",
+          "sound_url"
+        ],
+        "title": "WordExample"
       }
     }
   },

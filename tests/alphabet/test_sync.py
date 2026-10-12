@@ -1,5 +1,7 @@
+import hashlib
 import logging
 from collections.abc import Iterator
+from pathlib import Path
 
 import psycopg
 import pytest
@@ -8,10 +10,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.alphabet.models import Letter, LetterKind
+from app.alphabet.models import Letter, LetterKind, Word
 from app.alphabet.source import (
+    ALPHABET_FILE,
     CONTENT_DIR,
     AlphabetSource,
+    ExplanationSource,
     LetterSource,
     WordSource,
     load_alphabet,
@@ -38,7 +42,7 @@ B = LetterSource(
     code="b", symbol="Б", kind=LetterKind.CONSONANT, position=2, words=words("банан")
 )
 ALPHABET = AlphabetSource(id="ru", letters=[A, B])
-RUSSIAN = CONTENT_DIR / "ru.toml"
+RUSSIAN = CONTENT_DIR / "ru" / ALPHABET_FILE
 
 
 def snapshot(source: AlphabetSource) -> Snapshot:
@@ -168,6 +172,95 @@ async def test_sync_rejects_swapped_positions(db_session: AsyncSession) -> None:
 
     assert raised.value.orig.diag.constraint_name == "uq_letters_alphabet_id_position"
     assert await stored(db_session, "ru") == snapshot(ALPHABET)
+
+
+def version(content: bytes) -> str:
+    return hashlib.sha256(content).hexdigest()[:8]
+
+
+WITH_MEDIA = AlphabetSource(
+    id="ru",
+    letters=[
+        A.model_copy(
+            update={
+                "sound": "letters/a.mp3",
+                "words": [WordSource(text="аист", image="words/aist.webp")],
+            }
+        )
+    ],
+)
+
+
+@pytest.fixture
+def media(tmp_path: Path) -> Path:
+    for folder in ("letters", "words"):
+        (tmp_path / folder).mkdir()
+    (tmp_path / "letters" / "a.mp3").write_bytes(b"letter sound")
+    (tmp_path / "words" / "aist.webp").write_bytes(b"word image")
+    return tmp_path
+
+
+async def test_sync_stores_media_with_versions(
+    db_session: AsyncSession, media: Path
+) -> None:
+    await sync_alphabet(db_session, WITH_MEDIA, media)
+
+    assert await db_session.scalar(select(Letter.sound)) == (
+        f"letters/a.mp3?v={version(b'letter sound')}"
+    )
+    words_rows = await db_session.execute(select(Word.example, Word.image, Word.sound))
+    assert [tuple(row) for row in words_rows] == [
+        ("аист", f"words/aist.webp?v={version(b'word image')}", None)
+    ]
+
+
+async def test_changed_media_gets_new_version(
+    db_session: AsyncSession, media: Path
+) -> None:
+    await sync_alphabet(db_session, WITH_MEDIA, media)
+    (media / "letters" / "a.mp3").write_bytes(b"new letter sound")
+    (media / "words" / "aist.webp").write_bytes(b"new word image")
+
+    result = await sync_alphabet(db_session, WITH_MEDIA, media)
+
+    assert result.changed == 2
+    assert await db_session.scalar(select(Letter.sound)) == (
+        f"letters/a.mp3?v={version(b'new letter sound')}"
+    )
+    assert await db_session.scalar(select(Word.image)) == (
+        f"words/aist.webp?v={version(b'new word image')}"
+    )
+
+
+async def test_sync_rejects_missing_media(
+    db_session: AsyncSession, tmp_path: Path
+) -> None:
+    with pytest.raises(ValueError, match="letters/a.mp3: file not found"):
+        await sync_alphabet(db_session, WITH_MEDIA, tmp_path)
+
+    assert await stored(db_session, "ru") == []
+
+
+async def test_sync_stores_explanation(db_session: AsyncSession) -> None:
+    sign = LetterSource(
+        code="hard",
+        symbol="Ъ",
+        kind=LetterKind.SIGN,
+        position=28,
+        words=words("подъезд"),
+        explanation=ExplanationSource(pair=("сел", "съел")),
+    )
+
+    await sync_alphabet(db_session, AlphabetSource(id="ru", letters=[sign]))
+
+    row = await db_session.execute(
+        select(
+            Letter.explanation_without_sign,
+            Letter.explanation_with_sign,
+            Letter.explanation_sound,
+        )
+    )
+    assert tuple(row.one()) == ("сел", "съел", None)
 
 
 @pytest.fixture

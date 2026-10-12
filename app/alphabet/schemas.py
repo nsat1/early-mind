@@ -22,11 +22,38 @@ class LetterSummary(BaseModel):
     ]
 
 
-class LetterDetail(LetterSummary):
-    words: Annotated[
-        list[str],
+MediaUrl = Annotated[
+    str | None,
+    Field(
+        description="Адрес файла с версией. Пусто, если файла ещё нет",
+        examples=["/media/ru/letters/m.mp3?v=3fa2c1d4"],
+    ),
+]
+
+
+class WordExample(BaseModel):
+    text: Annotated[str, Field(description="Слово", examples=["медведь"])]
+    image_url: MediaUrl
+    sound_url: MediaUrl
+
+
+class Explanation(BaseModel):
+    pair: Annotated[
+        tuple[str, str],
         Field(
-            description="Слова-примеры в порядке показа",
-            examples=[["мяч", "машина", "медведь"]],
+            description="Пара слов, которые отличаются только знаком",
+            examples=[["сел", "съел"]],
         ),
+    ]
+    sound_url: MediaUrl
+
+
+class LetterDetail(LetterSummary):
+    sound_url: MediaUrl
+    explanation: Annotated[
+        Explanation | None,
+        Field(description="Пояснение роли знака. Есть только у Ъ и Ь"),
+    ]
+    words: Annotated[
+        list[WordExample], Field(description="Слова-примеры в порядке показа")
     ]

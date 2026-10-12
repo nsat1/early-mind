@@ -5,10 +5,10 @@ import pytest
 from pydantic import ValidationError
 
 from app.alphabet.source import (
-    CONTENT_DIR,
     IMAGE_MAX_BYTES,
     SOUND_MAX_BYTES,
     AlphabetSource,
+    alphabet_files,
     load_alphabet,
     media_problems,
 )
@@ -37,13 +37,11 @@ SIGN: dict[str, Any] = {
 }
 
 
-@pytest.mark.parametrize(
-    "path", sorted(CONTENT_DIR.glob("*.toml")), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", alphabet_files(), ids=lambda path: path.parent.name)
 def test_content_file_is_valid(path: Path) -> None:
     alphabet = load_alphabet(path)
 
-    assert alphabet.id == path.stem
+    assert alphabet.id == path.parent.name
     assert alphabet.letters
 
 
@@ -146,11 +144,10 @@ def test_invalid_alphabet_is_rejected(
 
 
 def test_media_problems_are_reported(tmp_path: Path) -> None:
-    media = tmp_path / "ru"
-    (media / "letters").mkdir(parents=True)
-    (media / "words").mkdir()
-    (media / "letters" / "a.mp3").write_bytes(bytes(SOUND_MAX_BYTES))
-    (media / "words" / "arbuz.webp").write_bytes(bytes(IMAGE_MAX_BYTES + 1))
+    (tmp_path / "letters").mkdir()
+    (tmp_path / "words").mkdir()
+    (tmp_path / "letters" / "a.mp3").write_bytes(bytes(SOUND_MAX_BYTES))
+    (tmp_path / "words" / "arbuz.webp").write_bytes(bytes(IMAGE_MAX_BYTES + 1))
     alphabet = AlphabetSource.model_validate(
         {
             "id": "ru",

@@ -49,6 +49,42 @@
 
 Служебная таблица `alembic_version` хранит номер последней применённой миграции.
 
+## Представления метрик
+
+Формулы метрик описаны в [каталоге аналитики](../requirements/analytics.md). Неделя — понедельник по московскому времени.
+
+### analytics_weekly_sessions — сессии по неделям
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `week` | `DATE` | Неделя |
+| `sessions` | `BIGINT` | Число сессий |
+| `completed_sessions` | `BIGINT` | Число сессий хотя бы с одним ответом |
+| `median_duration_seconds` | `DOUBLE PRECISION` | Медиана длительности сессии |
+| `healthy_duration_share` | `NUMERIC` | Доля сессий длительностью от 5 до 10 минут |
+| `median_strong_letters` | `DOUBLE PRECISION` | Медиана числа сильных букв на устройстве |
+
+### analytics_letter_accuracy — точность по буквам
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `week` | `DATE` | Неделя |
+| `alphabet_id` | `TEXT` | Алфавит |
+| `letter_code` | `TEXT` | Код буквы |
+| `task_type` | `TEXT` | Тип задания: `sound` или `picture` |
+| `answers` | `BIGINT` | Число ответов |
+| `correct_answers` | `BIGINT` | Число верных ответов |
+| `accuracy` | `NUMERIC` | Доля верных ответов |
+
+### analytics_retention — возврат по когортам
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `first_visit_week` | `TEXT` | Неделя первого визита по ISO 8601 |
+| `new_devices` | `BIGINT` | Число устройств когорты |
+| `returned_devices` | `BIGINT` | Число устройств, открывших приложение через 7–13 дней |
+| `return_rate` | `NUMERIC` | Доля вернувшихся. Пусто, если новых устройств нет |
+
 ## Где хранятся данные релиза 1
 
 | Данные | Где хранятся | Источник правды |

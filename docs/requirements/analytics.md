@@ -72,3 +72,23 @@
 - Несовместимое изменение полей события получает новую `schema_version`. Сервер принимает текущую и предыдущую версии.
 - IP-адреса не сохраняются ни в БД, ни в журналах веб-сервера для эндпоинта событий.
 - События хранятся 12 месяцев, затем удаляются.
+
+## Запросы метрик
+
+Метрики считаются представлениями в БД. Неделя начинается в понедельник по московскому времени.
+
+| Метрика | Представление | Колонки |
+|---|---|---|
+| Сильные буквы | `analytics_weekly_sessions` | `median_strong_letters` |
+| Точность по букве | `analytics_letter_accuracy` | `answers`, `correct_answers`, `accuracy` по неделе, алфавиту, букве и типу задания |
+| Завершённые сессии в неделю | `analytics_weekly_sessions` | `completed_sessions` |
+| Длительность сессии | `analytics_weekly_sessions` | `median_duration_seconds`, `healthy_duration_share` |
+| Возврат через 7 дней | `analytics_retention` | `new_devices`, `returned_devices`, `return_rate` по когорте |
+
+Пример — динамика сессий по неделям:
+
+```sql
+SELECT week, sessions, completed_sessions, median_duration_seconds
+FROM analytics_weekly_sessions
+ORDER BY week DESC;
+```

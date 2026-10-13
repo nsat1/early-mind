@@ -36,11 +36,12 @@
 | [Архитектура: модель C4](docs/architecture/c4.md) | Контекст, контейнеры, роли БД, интерфейсы API |
 | [Модель данных](docs/architecture/data-model.md) | ER-диаграмма и словарь данных |
 | [Спецификация API](docs/api/openapi.json) | Контракт REST API в формате OpenAPI 3.1, [документация на GitHub Pages](https://nsat1.github.io/early-mind/api/) |
-| [Руководство по запуску](docs/development.md) | Локальный запуск, PostgreSQL, тесты, отчёт Allure, схема БД |
+| [Руководство по запуску](docs/development.md) | Локальный запуск, фронтенд, PostgreSQL, тесты, отчёт Allure |
 
 ## Технологии
 
 - **Бэкенд:** Python 3.14, FastAPI, Pydantic.
+- **Фронтенд:** TypeScript, React, Vite, React Router, Vitest, Biome.
 - **Данные:** PostgreSQL 18, SQLAlchemy 2 (async), Alembic.
 - **Тесты:** pytest, интеграционные тесты на PostgreSQL, Allure Report.
 - **Инфраструктура:** Docker Compose, GitHub Actions, uv, Ruff, pre-commit.

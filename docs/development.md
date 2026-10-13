@@ -6,6 +6,14 @@
 2. Запустите API: `uv run --locked uvicorn app.main:create_app --factory --loop asyncio:SelectorEventLoop`.
 3. Откройте [Swagger UI](http://127.0.0.1:8000/docs)
 
+## Фронтенд
+
+1. Установите [Node.js 24](https://nodejs.org/) и откройте терминал в папке `frontend`.
+2. Установите зависимости: `npm ci`.
+3. Запустите: `npm run dev` и откройте http://localhost:5173.
+
+Проверки: типы — `npm run typecheck`, тесты — `npm test`, стиль кода — `npm run lint` ([Biome](https://biomejs.dev/), исправить — `npm run format`), сборка — `npm run build`.
+
 ## Локальная PostgreSQL
 
 1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
@@ -27,7 +35,7 @@
 ## Проверки перед коммитом
 
 - Установите хуки один раз: `uv run --locked pre-commit install`.
-- При `git commit` хуки запускают Ruff, проверяют файлы и обновляют `docs/api/openapi.json`. Если хук исправил файлы, коммит останавливается: добавьте исправления (`git add`) и повторите коммит.
+- При `git commit` хуки запускают Ruff и Biome, проверяют файлы и обновляют `docs/api/openapi.json`. Если хук исправил файлы, коммит останавливается: добавьте исправления (`git add`) и повторите коммит.
 - Проверить весь репозиторий вручную: `uv run --locked pre-commit run --all-files`.
 
 ## Отчёт [Allure](https://allurereport.org/) (нужен Node.js)

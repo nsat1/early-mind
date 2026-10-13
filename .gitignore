@@ -221,5 +221,9 @@ __marimo__/
 allure-results/
 allure-report/
 
+# Node
+node_modules/
+
 # Claude Code
 CLAUDE.md
+.claude/

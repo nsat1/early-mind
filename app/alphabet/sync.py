@@ -23,7 +23,7 @@ from app.db.session import create_database
 
 logger = logging.getLogger(__name__)
 
-LETTER_FIELDS = ("symbol", "kind", "position", "sound")
+LETTER_FIELDS = ("symbol", "kind", "position", "sound", "image")
 WORD_FIELDS = ("example", "image", "sound")
 
 
@@ -60,6 +60,7 @@ def letter_row(letter: LetterSource, files: Path) -> dict[str, Any]:
         "kind": letter.kind,
         "position": letter.position,
         "sound": versioned(files, letter.sound),
+        "image": versioned(files, letter.image),
     }
 
 

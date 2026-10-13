@@ -33,6 +33,7 @@ RUSSIAN = AlphabetSource.model_validate(
             letter("m", "М", "consonant", 14)
             | {
                 "sound": "letters/m.mp3",
+                "image": "letters/m.webp",
                 "words": [
                     {
                         "text": "мяч",
@@ -54,6 +55,7 @@ ENGLISH = AlphabetSource.model_validate(
 
 MEDIA = {
     "letters/m.mp3": b"m sound",
+    "letters/m.webp": b"m image",
     "words/myach.webp": b"ball image",
     "words/myach.mp3": b"ball sound",
 }
@@ -79,10 +81,15 @@ async def test_list_letters_orders_by_position(api_client: AsyncClient) -> None:
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/json"
     assert response.json() == [
-        {"code": "a", "symbol": "А", "kind": "vowel"},
-        {"code": "yo", "symbol": "Ё", "kind": "vowel"},
-        {"code": "m", "symbol": "М", "kind": "consonant"},
-        {"code": "soft", "symbol": "Ь", "kind": "sign"},
+        {"code": "a", "symbol": "А", "kind": "vowel", "image_url": None},
+        {"code": "yo", "symbol": "Ё", "kind": "vowel", "image_url": None},
+        {
+            "code": "m",
+            "symbol": "М",
+            "kind": "consonant",
+            "image_url": media_url("letters/m.webp"),
+        },
+        {"code": "soft", "symbol": "Ь", "kind": "sign", "image_url": None},
     ]
 
 
@@ -129,6 +136,7 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
                 "code": "a",
                 "symbol": "А",
                 "kind": "vowel",
+                "image_url": None,
                 "sound_url": None,
                 "words": [
                     {"text": text, "image_url": None, "sound_url": None}
@@ -142,6 +150,7 @@ async def test_unknown_alphabet_returns_not_found(api_client: AsyncClient) -> No
                 "code": "a",
                 "symbol": "A",
                 "kind": "vowel",
+                "image_url": None,
                 "sound_url": None,
                 "words": [{"text": "apple", "image_url": None, "sound_url": None}],
             },
@@ -166,6 +175,7 @@ async def test_get_letter_returns_media_urls(api_client: AsyncClient) -> None:
         "code": "m",
         "symbol": "М",
         "kind": "consonant",
+        "image_url": media_url("letters/m.webp"),
         "sound_url": media_url("letters/m.mp3"),
         "words": [
             {

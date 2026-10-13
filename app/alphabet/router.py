@@ -55,7 +55,15 @@ async def list_letters(
     letters = await repository.list_letters(session, alphabet_id, kind)
     if letters is None:
         raise HTTPException(status_code=404, detail=ALPHABET_NOT_FOUND)
-    return [LetterSummary.model_validate(letter) for letter in letters]
+    return [
+        LetterSummary(
+            code=letter.code,
+            symbol=letter.symbol,
+            kind=letter.kind,
+            image_url=media_url(alphabet_id, letter.image),
+        )
+        for letter in letters
+    ]
 
 
 @router.get(
@@ -77,6 +85,7 @@ async def get_letter(
         code=letter.code,
         symbol=letter.symbol,
         kind=letter.kind,
+        image_url=media_url(alphabet_id, letter.image),
         sound_url=media_url(alphabet_id, letter.sound),
         words=[
             WordExample(

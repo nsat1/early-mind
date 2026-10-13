@@ -58,6 +58,7 @@ class LetterSource(SourceModel):
     kind: LetterKind
     position: Annotated[int, Field(gt=0)]
     sound: SoundPath | None = None
+    image: ImagePath | None = None
     words: Annotated[list[WordSource], Field(min_length=1)]
 
 
@@ -77,7 +78,7 @@ class AlphabetSource(SourceModel):
     def media(self) -> Iterator[tuple[str, int]]:
         for letter in self.letters:
             sounds = [letter.sound, *(word.sound for word in letter.words)]
-            images = [word.image for word in letter.words]
+            images = [letter.image, *(word.image for word in letter.words)]
             yield from ((path, SOUND_MAX_BYTES) for path in sounds if path)
             yield from ((path, IMAGE_MAX_BYTES) for path in images if path)
 

@@ -61,6 +61,7 @@ class Letter(Base):
     )
     position: Mapped[int] = mapped_column(SmallInteger)
     sound: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
+    image: Mapped[str | None] = mapped_column(String(MEDIA_LENGTH))
     words: Mapped[list[Word]] = relationship(
         order_by="Word.position",
         cascade="all, delete-orphan",

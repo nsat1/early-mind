@@ -68,6 +68,12 @@ def test_content_file_is_valid(path: Path) -> None:
             id="unsupported-image",
         ),
         pytest.param(
+            {"image": "letters/a.png"},
+            "string_pattern_mismatch",
+            "image",
+            id="unsupported-letter-image",
+        ),
+        pytest.param(
             {"sound": "letters/a.wav"},
             "string_pattern_mismatch",
             "sound",
@@ -134,6 +140,7 @@ def test_media_problems_are_reported(tmp_path: Path) -> None:
                 LETTER
                 | {
                     "sound": "letters/a.mp3",
+                    "image": "letters/a.webp",
                     "words": [
                         {
                             "text": "арбуз",
@@ -149,6 +156,7 @@ def test_media_problems_are_reported(tmp_path: Path) -> None:
 
     assert media_problems(alphabet, tmp_path) == [
         "words/arbuz.mp3: file not found",
+        "letters/a.webp: file not found",
         f"words/arbuz.webp: larger than {IMAGE_MAX_BYTES} bytes",
         "letters/hard.mp3: file not found",
     ]

@@ -183,6 +183,7 @@ WITH_MEDIA = AlphabetSource(
         A.model_copy(
             update={
                 "sound": "letters/a.mp3",
+                "image": "letters/a.webp",
                 "words": [WordSource(text="аист", image="words/aist.webp")],
             }
         )
@@ -195,6 +196,7 @@ def media(tmp_path: Path) -> Path:
     for folder in ("letters", "words"):
         (tmp_path / folder).mkdir()
     (tmp_path / "letters" / "a.mp3").write_bytes(b"letter sound")
+    (tmp_path / "letters" / "a.webp").write_bytes(b"letter image")
     (tmp_path / "words" / "aist.webp").write_bytes(b"word image")
     return tmp_path
 
@@ -204,8 +206,10 @@ async def test_sync_stores_media_with_versions(
 ) -> None:
     await sync_alphabet(db_session, WITH_MEDIA, media)
 
-    assert await db_session.scalar(select(Letter.sound)) == (
-        f"letters/a.mp3?v={version(b'letter sound')}"
+    letter = await db_session.execute(select(Letter.sound, Letter.image))
+    assert tuple(letter.one()) == (
+        f"letters/a.mp3?v={version(b'letter sound')}",
+        f"letters/a.webp?v={version(b'letter image')}",
     )
     words_rows = await db_session.execute(select(Word.example, Word.image, Word.sound))
     assert [tuple(row) for row in words_rows] == [
@@ -218,13 +222,16 @@ async def test_changed_media_gets_new_version(
 ) -> None:
     await sync_alphabet(db_session, WITH_MEDIA, media)
     (media / "letters" / "a.mp3").write_bytes(b"new letter sound")
+    (media / "letters" / "a.webp").write_bytes(b"new letter image")
     (media / "words" / "aist.webp").write_bytes(b"new word image")
 
     result = await sync_alphabet(db_session, WITH_MEDIA, media)
 
     assert result.changed == 2
-    assert await db_session.scalar(select(Letter.sound)) == (
-        f"letters/a.mp3?v={version(b'new letter sound')}"
+    letter = await db_session.execute(select(Letter.sound, Letter.image))
+    assert tuple(letter.one()) == (
+        f"letters/a.mp3?v={version(b'new letter sound')}",
+        f"letters/a.webp?v={version(b'new letter image')}",
     )
     assert await db_session.scalar(select(Word.image)) == (
         f"words/aist.webp?v={version(b'new word image')}"

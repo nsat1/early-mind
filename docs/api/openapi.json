@@ -581,6 +581,21 @@
               "consonant"
             ]
           },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Адрес картинки с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.webp?v=9d41b7e2"
+            ]
+          },
           "sound_url": {
             "anyOf": [
               {
@@ -591,7 +606,7 @@
               }
             ],
             "title": "Sound Url",
-            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "description": "Адрес звука с версией. Пусто, если файла ещё нет",
             "examples": [
               "/media/ru/letters/m.mp3?v=3fa2c1d4"
             ]
@@ -610,6 +625,7 @@
           "code",
           "symbol",
           "kind",
+          "image_url",
           "sound_url",
           "words"
         ],
@@ -648,13 +664,29 @@
             "examples": [
               "consonant"
             ]
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url",
+            "description": "Адрес картинки с версией. Пусто, если файла ещё нет",
+            "examples": [
+              "/media/ru/letters/m.webp?v=9d41b7e2"
+            ]
           }
         },
         "type": "object",
         "required": [
           "code",
           "symbol",
-          "kind"
+          "kind",
+          "image_url"
         ],
         "title": "LetterSummary"
       },
@@ -900,9 +932,9 @@
               }
             ],
             "title": "Image Url",
-            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "description": "Адрес картинки с версией. Пусто, если файла ещё нет",
             "examples": [
-              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+              "/media/ru/words/medved.webp?v=5b9e0a17"
             ]
           },
           "sound_url": {
@@ -915,9 +947,9 @@
               }
             ],
             "title": "Sound Url",
-            "description": "Адрес файла с версией. Пусто, если файла ещё нет",
+            "description": "Адрес звука с версией. Пусто, если файла ещё нет",
             "examples": [
-              "/media/ru/letters/m.mp3?v=3fa2c1d4"
+              "/media/ru/words/medved.mp3?v=8c2d4f60"
             ]
           }
         },

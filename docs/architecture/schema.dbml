@@ -10,6 +10,7 @@ Table letters {
   kind varchar(9) [not null]
   position smallint [not null]
   sound varchar(111)
+  image varchar(111)
 
   indexes {
     (alphabet_id, code) [unique, name: 'uq_letters_alphabet_id_code']

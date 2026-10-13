@@ -1,6 +1,16 @@
 # Руководство по запуску
 
-## Локальный запуск
+## Локальная PostgreSQL
+
+1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
+2. Скопируйте `.env.example` в `.env` и задайте случайные `POSTGRES_PASSWORD`, `DB_PASSWORD` и `DB_MIGRATION_PASSWORD`.
+3. Запустите БД: `docker compose up -d --wait db`.
+4. Примените миграции: `uv run --locked alembic upgrade head`.
+5. Загрузите контент: `uv run --locked python -m app.alphabet.sync`. Команда добавляет и обновляет буквы и слова из `content/alphabets`, повторный запуск безопасен. Буквы, удалённые из файлов, остаются в БД: команда выводит о них предупреждение.
+
+Роли и их пароли создаются только при первом запуске на пустом томе. Чтобы применить изменения в `scripts/db`, пересоздайте БД (все данные будут удалены): `docker compose down -v`.
+
+## Бэкенд
 
 1. Установите [uv](https://docs.astral.sh/uv/getting-started/installation/) и откройте терминал в корне проекта.
 2. Запустите API: `uv run --locked uvicorn app.main:create_app --factory --loop asyncio:SelectorEventLoop`.
@@ -14,16 +24,6 @@
 
 Проверки: типы — `npm run typecheck`, тесты — `npm test`, стиль кода — `npm run lint` ([Biome](https://biomejs.dev/), исправить — `npm run format`), сборка — `npm run build`.
 
-## Локальная PostgreSQL
-
-1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
-2. Скопируйте `.env.example` в `.env` и задайте случайные `POSTGRES_PASSWORD`, `DB_PASSWORD` и `DB_MIGRATION_PASSWORD`.
-3. Запустите БД: `docker compose up -d --wait db`.
-4. Примените миграции: `uv run --locked alembic upgrade head`.
-5. Загрузите контент: `uv run --locked python -m app.alphabet.sync`. Команда добавляет и обновляет буквы и слова из `content/alphabets`, повторный запуск безопасен. Буквы, удалённые из файлов, остаются в БД: команда выводит о них предупреждение.
-
-Роли и их пароли создаются только при первом запуске на пустом томе. Чтобы применить изменения в `scripts/db`, пересоздайте БД (все данные будут удалены): `docker compose down -v`.
-
 ## Тесты
 
 - Все тесты: `uv run --locked pytest`.
@@ -32,7 +32,7 @@
 - После изменения API обновите спецификацию `docs/api/openapi.json`: `uv run --locked python -m app.openapi`. Иначе упадёт тест её актуальности. Файл генерируется из кода, тексты правьте в коде.
 - Документация API по ветке `main` публикуется на [GitHub Pages](https://nsat1.github.io/early-mind/api/) после каждого успешного прогона CI.
 
-## Проверки перед коммитом
+## Pre-commit
 
 - Установите хуки один раз: `uv run --locked pre-commit install`.
 - При `git commit` хуки запускают Ruff и Biome, проверяют файлы и обновляют `docs/api/openapi.json`. Если хук исправил файлы, коммит останавливается: добавьте исправления (`git add`) и повторите коммит.

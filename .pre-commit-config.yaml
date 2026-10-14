@@ -34,3 +34,9 @@ repos:
         language: system
         files: ^app/
         pass_filenames: false
+      - id: api-types
+        name: frontend api types
+        entry: npm --prefix frontend run api:types
+        language: system
+        files: ^(app/|docs/api/openapi\.json$)
+        pass_filenames: false

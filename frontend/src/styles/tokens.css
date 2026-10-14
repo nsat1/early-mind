@@ -4,12 +4,16 @@
   --font-size-title: 2.25rem;
   --font-size-glyph: 3.5rem;
   --font-size-icon: 1.75rem;
+  --font-size-caption: 0.875rem;
   --color-background: #fdf8f0;
   --color-surface: #ffffff;
   --color-text: #2b2b2b;
   --color-muted: #6b6b6b;
   --color-accent: #2f6fd1;
   --color-border: #e6dfd3;
+  --color-vowel: #d64545;
+  --color-consonant: #2f6fd1;
+  --color-sign: #7a7a7a;
   --radius: 24px;
   --space-1: 8px;
   --space-2: 16px;

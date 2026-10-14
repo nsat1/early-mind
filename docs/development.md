@@ -20,9 +20,11 @@
 
 1. Установите [Node.js 24](https://nodejs.org/) и откройте терминал в папке `frontend`.
 2. Установите зависимости: `npm ci`.
-3. Запустите: `npm run dev` и откройте http://localhost:5173.
+3. Запустите: `npm run dev` и откройте http://localhost:5173. Данные приходят с бэкенда: сервер разработки перенаправляет `/api` и `/media` на http://127.0.0.1:8000, поэтому сначала запустите БД и бэкенд.
 
 Проверки: типы — `npm run typecheck`, тесты — `npm test`, стиль кода — `npm run lint` ([Biome](https://biomejs.dev/), исправить — `npm run format`), сборка — `npm run build`.
+
+Типы API в `src/api/schema.ts` генерируются из `docs/api/openapi.json`, руками их не правьте. После изменения API обновите их: `npm run api:types` (при коммите это делает хук).
 
 ## Тесты
 

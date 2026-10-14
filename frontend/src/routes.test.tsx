@@ -1,29 +1,22 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMemoryRouter, RouterProvider } from "react-router";
 import { expect, test } from "vitest";
 import { paths } from "./paths";
-import { routes } from "./routes";
-
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
-  render(<RouterProvider router={router} />);
-  return router;
-}
+import { renderApp } from "./test-utils";
 
 function tab(name: string) {
   return screen.getByRole("link", { name });
 }
 
 test("home page links to alphabet and parent screen", () => {
-  renderAt(paths.home);
+  renderApp(paths.home);
 
   expect(tab("Алфавит").getAttribute("href")).toBe(paths.alphabet);
   expect(tab("Для родителя").getAttribute("href")).toBe(paths.parent);
 });
 
 test("alphabet section opens letters tab", async () => {
-  const router = renderAt(paths.home);
+  const router = renderApp(paths.home);
 
   await userEvent.click(tab("Алфавит"));
 
@@ -33,7 +26,7 @@ test("alphabet section opens letters tab", async () => {
 });
 
 test("tabs switch between letters and tasks", async () => {
-  const router = renderAt(paths.letters);
+  const router = renderApp(paths.letters);
 
   await userEvent.click(tab("Задания"));
 
@@ -42,7 +35,7 @@ test("tabs switch between letters and tasks", async () => {
 });
 
 test("home button returns to home page", async () => {
-  const router = renderAt(paths.tasks);
+  const router = renderApp(paths.tasks);
 
   await userEvent.click(tab("На главную"));
 
@@ -50,7 +43,7 @@ test("home button returns to home page", async () => {
 });
 
 test("unknown address shows not found page", () => {
-  renderAt("/missing");
+  renderApp("/missing");
 
   expect(
     screen.getByRole("heading", { name: "Страница не найдена" }),

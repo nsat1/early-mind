@@ -44,5 +44,24 @@ Table analytics_events {
   }
 }
 
+Table accounts {
+  account_id uuid [pk, default: `uuidv7()`]
+  email varchar(254) [not null, unique]
+  password_hash varchar(128) [not null]
+  email_verified_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+}
+
+Table consents {
+  account_id uuid [not null]
+  policy_version varchar(20) [not null]
+  accepted_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (account_id, policy_version) [pk, name: 'pk_consents']
+  }
+}
+
 Ref fk_letters_alphabet_id_alphabets: letters.alphabet_id > alphabets.alphabet_id [delete: cascade]
 Ref fk_words_letter_id_letters: words.letter_id > letters.letter_id [delete: cascade]
+Ref fk_consents_account_id_accounts: consents.account_id > accounts.account_id [delete: cascade]

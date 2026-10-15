@@ -11,7 +11,7 @@ from app.core.config import MigrationSettings, Settings
 @pytest.fixture(autouse=True)
 def clear_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in tuple(os.environ):
-        if name.upper().startswith("DB_"):
+        if name.upper().startswith(("DB_", "REDIS_")):
             monkeypatch.delenv(name)
 
 
@@ -21,7 +21,8 @@ def test_file_and_priorities(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     env_file.write_text(
         f"POSTGRES_PASSWORD=ignored\nDB_PASSWORD='{password}'\n"
         "DB_HOST=' db '\nDB_NAME=' early_mind '\n"
-        "DB_USER=' early_mind_app '\nDB_PORT=5433\n",
+        "DB_USER=' early_mind_app '\nDB_PORT=5433\n"
+        f"REDIS_PASSWORD='{password}'\nREDIS_HOST=' redis '\nREDIS_PORT=6380\n",
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path.parent)
@@ -31,23 +32,49 @@ def test_file_and_priorities(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert settings.db_name == "early_mind"
     assert settings.db_user == "early_mind_app"
     assert settings.db_password.get_secret_value() == password
+    assert (settings.redis_host, settings.redis_port, settings.redis_db) == (
+        "redis",
+        6380,
+        0,
+    )
+    assert settings.redis_password.get_secret_value() == password
     assert password not in str(settings) + repr(settings) + settings.model_dump_json()
     monkeypatch.setenv("DB_PORT", "5434")
     assert Settings(_env_file=env_file).db_port == 5434
     assert Settings(_env_file=env_file, db_port=5435).db_port == 5435
 
 
+def valid_settings() -> dict[str, object]:
+    return {
+        "db_password": secrets.token_urlsafe(16),
+        "redis_password": secrets.token_urlsafe(16),
+    }
+
+
+@pytest.mark.parametrize("secret", ["db_password", "redis_password"])
+def test_secrets_are_required(secret: str) -> None:
+    values = valid_settings()
+    del values[secret]
+    with pytest.raises(ValidationError, match=secret):
+        Settings(_env_file=None, **values)
+
+
 @pytest.mark.parametrize(
     "values",
-    [{}, {"db_password": ""}]
-    + [{"db_port": value} for value in (0, 65536, "hidden-input")]
-    + [{field: " "} for field in ("db_host", "db_name", "db_user")],
+    [{"db_password": ""}, {"redis_password": ""}]
+    + [
+        {field: value}
+        for field in ("db_port", "redis_port")
+        for value in (0, 65536, "hidden-input")
+    ]
+    + [{"redis_db": value} for value in (-1, 16)]
+    + [{field: " "} for field in ("db_host", "db_name", "db_user", "redis_host")],
 )
 def test_invalid_settings(values: dict[str, object]) -> None:
-    if values and "db_password" not in values:
-        values = {**values, "db_password": secrets.token_urlsafe(16)}
     with pytest.raises(ValidationError) as error:
-        Settings(_env_file=None, **values)
+        Settings(_env_file=None, **(valid_settings() | values))
+    [problem] = error.value.errors()
+    assert problem["loc"] == (next(iter(values)),)
     assert "input_value" not in str(error.value)
     assert "hidden-input" not in str(error.value)
 
@@ -56,7 +83,8 @@ def test_roles_do_not_share_credentials() -> None:
     assert "db_migration_password" not in Settings.model_fields
     assert "db_password" not in MigrationSettings.model_fields
     password = secrets.token_urlsafe(16)
-    assert Settings(_env_file=None, db_password=password).db_user == "early_mind_app"
+    settings = Settings(_env_file=None, db_password=password, redis_password=password)
+    assert settings.db_user == "early_mind_app"
     migration = MigrationSettings(_env_file=None, db_migration_password=password)
     assert migration.db_migration_user == "early_mind_migrator"
 

@@ -33,7 +33,7 @@ export interface paths {
         };
         /**
          * API готов принимать запросы
-         * @description Выполняет запрос к БД и отвечает 503, если БД недоступна.
+         * @description Проверяет БД и хранилище сессий Redis, отвечает 503, если одно из них недоступно.
          */
         get: operations["check_readiness"];
         put?: never;
@@ -455,7 +455,7 @@ export interface operations {
                     "application/json": components["schemas"]["HealthResponse"];
                 };
             };
-            /** @description API не готов: база данных недоступна */
+            /** @description API не готов: база данных или хранилище сессий недоступны */
             503: {
                 headers: {
                     [name: string]: unknown;

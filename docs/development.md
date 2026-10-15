@@ -1,10 +1,10 @@
 # Руководство по запуску
 
-## Локальная PostgreSQL
+## PostgreSQL, Redis и почта
 
 1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
-2. Скопируйте `.env.example` в `.env` и задайте случайные `POSTGRES_PASSWORD`, `DB_PASSWORD` и `DB_MIGRATION_PASSWORD`.
-3. Запустите БД: `docker compose up -d --wait db`.
+2. Скопируйте `.env.example` в `.env` и задайте случайные `POSTGRES_PASSWORD`, `DB_PASSWORD`, `DB_MIGRATION_PASSWORD` и `REDIS_PASSWORD`.
+3. Запустите PostgreSQL, Redis и почтовый ящик [Mailpit](https://mailpit.axllent.org/): `docker compose up -d --wait`. Письма, которые отправляет приложение, видны на http://localhost:8025.
 4. Примените миграции: `uv run --locked alembic upgrade head`.
 5. Загрузите контент: `uv run --locked python -m app.alphabet.sync`. Команда добавляет и обновляет буквы и слова из `content/alphabets`, повторный запуск безопасен. Буквы, удалённые из файлов, остаются в БД: команда выводит о них предупреждение.
 

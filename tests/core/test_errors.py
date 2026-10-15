@@ -3,6 +3,7 @@ import logging
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from redis.exceptions import ConnectionError as RedisConnectionError
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 
 from app.core.errors import PROBLEM_MEDIA_TYPE
@@ -66,6 +67,26 @@ def test_unavailable_database_returns_service_unavailable(
         "instance": "/api/v1/alphabets/ru/letters",
     }
     assert caplog.messages == ["Database unavailable"]
+
+
+def test_unavailable_session_storage_returns_service_unavailable(
+    app: FastAPI, caplog: pytest.LogCaptureFixture
+) -> None:
+    async def fail() -> None:
+        raise RedisConnectionError("connection refused")
+
+    app.add_api_route("/fail", fail)
+    with (
+        caplog.at_level(logging.WARNING, logger="app.core.errors"),
+        TestClient(app) as client,
+    ):
+        response = client.get("/fail")
+
+    assert response.status_code == 503
+    assert response.headers["content-type"] == PROBLEM_MEDIA_TYPE
+    assert response.json()["detail"] == "Session storage unavailable"
+    assert "connection refused" not in response.text
+    assert caplog.messages == ["Session storage unavailable"]
 
 
 @pytest.mark.parametrize(

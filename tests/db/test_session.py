@@ -15,6 +15,7 @@ def settings(password: str) -> Settings:
         db_name="sample",
         db_user="app",
         db_password=password,
+        redis_password=password,
     )
 
 

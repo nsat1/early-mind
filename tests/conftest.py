@@ -13,6 +13,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx2 import ASGITransport, AsyncClient
 from pydantic import Field, SecretStr, ValidationError
+from redis import Redis as SyncRedis
+from redis.asyncio import Redis
+from redis.exceptions import RedisError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import (
@@ -22,11 +25,13 @@ from app.core.config import (
     Settings,
 )
 from app.db.dependencies import get_db_session
+from app.db.redis import create_redis
 from app.db.session import create_database
 from app.main import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
 TEST_DATABASE = "early_mind_test"
+TEST_REDIS_DB = 15
 BACKEND_OPTIONS: dict[str, object] = {"loop_factory": asyncio.SelectorEventLoop}
 
 
@@ -35,7 +40,7 @@ class AdminSettings(DatabaseSettings):
     postgres_password: SecretStr = Field(min_length=1)
 
 
-def database_unavailable(reason: str) -> NoReturn:
+def service_unavailable(reason: str) -> NoReturn:
     if os.environ.get("CI"):
         pytest.fail(reason, pytrace=False)
     pytest.skip(reason)
@@ -67,6 +72,8 @@ def settings() -> Settings:
         db_name="early_mind",
         db_user="early_mind_app",
         db_password=secrets.token_urlsafe(16),
+        redis_host="redis.invalid",
+        redis_password=secrets.token_urlsafe(16),
     )
 
 
@@ -95,7 +102,7 @@ def test_database() -> Iterator[None]:
     try:
         admin = AdminSettings()
     except ValidationError:
-        database_unavailable("POSTGRES_PASSWORD is not set")
+        service_unavailable("POSTGRES_PASSWORD is not set")
 
     def as_admin(dbname: str) -> psycopg.Connection:
         return connect(admin, admin.postgres_user, admin.postgres_password, dbname)
@@ -103,7 +110,7 @@ def test_database() -> Iterator[None]:
     try:
         maintenance = as_admin("postgres")
     except psycopg.OperationalError as error:
-        database_unavailable(f"PostgreSQL is unavailable: {error}")
+        service_unavailable(f"PostgreSQL is unavailable: {error}")
     with maintenance:
         maintenance.execute(f"DROP DATABASE IF EXISTS {TEST_DATABASE} WITH (FORCE)")
         maintenance.execute(f"CREATE DATABASE {TEST_DATABASE}")
@@ -115,6 +122,36 @@ def test_database() -> Iterator[None]:
         yield
     with as_admin("postgres") as maintenance:
         maintenance.execute(f"DROP DATABASE {TEST_DATABASE} WITH (FORCE)")
+
+
+@pytest.fixture
+def test_redis() -> Iterator[Settings]:
+    try:
+        settings = Settings(redis_db=TEST_REDIS_DB)
+    except ValidationError:
+        service_unavailable("REDIS_PASSWORD is not set")
+    with SyncRedis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        db=settings.redis_db,
+        password=settings.redis_password.get_secret_value(),
+        socket_connect_timeout=2,
+    ) as client:
+        try:
+            client.flushdb()
+        except RedisError as error:
+            service_unavailable(f"Redis is unavailable: {error}")
+        yield settings
+        client.flushdb()
+
+
+@pytest.fixture
+async def redis_client(test_redis: Settings) -> AsyncIterator[Redis]:
+    client = create_redis(test_redis)
+    try:
+        yield client
+    finally:
+        await client.aclose()
 
 
 @pytest.fixture

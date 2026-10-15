@@ -17,24 +17,33 @@ def test_lifespan_closes_and_recreates_resources(
     engines = [Mock(dispose=AsyncMock()), Mock(dispose=AsyncMock())]
     factories = [object(), object()]
     create = Mock(side_effect=list(zip(engines, factories, strict=True)))
+    redis_clients = [Mock(aclose=AsyncMock()), Mock(aclose=AsyncMock())]
+    create_redis = Mock(side_effect=redis_clients)
     monkeypatch.setattr("app.db.lifespan.create_database", create)
+    monkeypatch.setattr("app.db.lifespan.create_redis", create_redis)
     assert not hasattr(app.state, "session_factory")
 
     async def check() -> None:
-        for engine, factory in zip(engines, factories, strict=True):
+        for engine, factory, redis in zip(
+            engines, factories, redis_clients, strict=True
+        ):
             expected = (
                 pytest.raises(RuntimeError, match="probe") if fail else nullcontext()
             )
             with expected:
                 async with app.router.lifespan_context(app):
                     assert app.state.session_factory is factory
+                    assert app.state.redis is redis
                     if fail:
                         raise RuntimeError("probe")
             assert not hasattr(app.state, "session_factory")
+            assert not hasattr(app.state, "redis")
             engine.dispose.assert_awaited_once_with()
+            redis.aclose.assert_awaited_once_with()
 
     asyncio.run(check())
     assert create.call_args_list == [call(settings), call(settings)]
+    assert create_redis.call_args_list == [call(settings), call(settings)]
 
 
 def test_settings_load_only_on_startup(monkeypatch: pytest.MonkeyPatch) -> None:

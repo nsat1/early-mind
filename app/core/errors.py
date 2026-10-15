@@ -7,6 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import TimeoutError as PoolTimeoutError
 from starlette.exceptions import HTTPException
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 PROBLEM_MEDIA_TYPE = "application/problem+json"
 INVALID_PARAMETERS = "Request parameters are invalid"
 DATABASE_UNAVAILABLE = "Database unavailable"
+SESSION_STORAGE_UNAVAILABLE = "Session storage unavailable"
 COMMON_PROBLEMS = {
     422: ("Параметры запроса не прошли проверку", INVALID_PARAMETERS),
     503: ("База данных недоступна", DATABASE_UNAVAILABLE),
@@ -143,6 +146,13 @@ async def handle_database_unavailable(request: Request, exc: Exception) -> JSONR
     return problem_response(request, 503, DATABASE_UNAVAILABLE)
 
 
+async def handle_session_storage_unavailable(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    logger.warning("Session storage unavailable", exc_info=exc)
+    return problem_response(request, 503, SESSION_STORAGE_UNAVAILABLE)
+
+
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
     return problem_response(request, 500)
 
@@ -168,5 +178,7 @@ def register_problem_details(app: FastAPI) -> None:
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(OperationalError, handle_database_unavailable)
     app.add_exception_handler(PoolTimeoutError, handle_database_unavailable)
+    app.add_exception_handler(RedisConnectionError, handle_session_storage_unavailable)
+    app.add_exception_handler(RedisTimeoutError, handle_session_storage_unavailable)
     app.add_exception_handler(Exception, handle_unexpected_error)
     app.openapi = problem_openapi(app.openapi)

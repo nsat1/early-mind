@@ -35,7 +35,7 @@
           "health"
         ],
         "summary": "API готов принимать запросы",
-        "description": "Выполняет запрос к БД и отвечает 503, если БД недоступна.",
+        "description": "Проверяет БД и хранилище сессий Redis, отвечает 503, если одно из них недоступно.",
         "operationId": "check_readiness",
         "responses": {
           "200": {
@@ -49,7 +49,7 @@
             }
           },
           "503": {
-            "description": "API не готов: база данных недоступна",
+            "description": "API не готов: база данных или хранилище сессий недоступны",
             "content": {
               "application/problem+json": {
                 "schema": {

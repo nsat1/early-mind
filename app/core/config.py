@@ -23,6 +23,10 @@ class DatabaseSettings(BaseSettings):
 class Settings(DatabaseSettings):
     db_user: NonEmptyString = "early_mind_app"
     db_password: SecretStr = Field(min_length=1)
+    redis_host: NonEmptyString = "127.0.0.1"
+    redis_port: int = Field(default=6379, ge=1, le=65535)
+    redis_db: int = Field(default=0, ge=0, le=15)
+    redis_password: SecretStr = Field(min_length=1)
 
 
 class MigrationSettings(DatabaseSettings):

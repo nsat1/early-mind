@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import Depends, Request
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
@@ -15,3 +16,11 @@ DbSession = Annotated[
     AsyncSession,
     Depends(get_db_session, scope="function"),
 ]
+
+
+def get_redis(request: Request) -> Redis:
+    redis: Redis = request.app.state.redis
+    return redis
+
+
+RedisClient = Annotated[Redis, Depends(get_redis)]

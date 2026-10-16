@@ -23,9 +23,12 @@ jobs:
         with:
           version: "0.12.22"
       - name: Install dependencies
+        working-directory: backend
         run: uv sync --locked
       - name: Run pre-commit hooks
-        run: uv run --locked pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: biome
+        run: uv run --project backend --locked pre-commit run --all-files --show-diff-on-failure
       - name: Generate database passwords
         run: |
           for name in POSTGRES_PASSWORD DB_PASSWORD DB_MIGRATION_PASSWORD REDIS_PASSWORD; do
@@ -35,6 +38,7 @@ jobs:
         run: docker compose up -d --wait db redis
       - name: Run tests
         id: tests
+        working-directory: backend
         run: uv run --locked pytest -q -W error --alluredir=allure-results
       - name: Set up Node.js
         if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
@@ -43,13 +47,14 @@ jobs:
           node-version: "24"
       - name: Generate Allure report
         if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
+        working-directory: backend
         run: npx --yes allure@3.20.1 generate allure-results
       - name: Upload Allure report
         if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: allure-report
-          path: allure-report/index.html
+          path: backend/allure-report/index.html
           if-no-files-found: error
           retention-days: 14
       - name: Build API docs
@@ -60,7 +65,7 @@ jobs:
       - name: Assemble Pages site
         if: github.event_name == 'push'
         run: |
-          cp -r allure-report/. site/
+          cp -r backend/allure-report/. site/
           cp docs/api/openapi.json site/api/
       - name: Upload site to Pages
         if: github.event_name == 'push'
@@ -87,6 +92,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Check code style
+        run: npm run lint
       - name: Check API types are up to date
         run: |
           npm run api:types

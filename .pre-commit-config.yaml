@@ -11,32 +11,33 @@ repos:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
-  - repo: https://github.com/biomejs/pre-commit
-    rev: df12125767e3be2d945f0239811b308ff2a32c3f # frozen: v2.5.14
-    hooks:
-      - id: biome-check
-        files: ^frontend/.*\.(tsx?|json|css)$
   - repo: local
     hooks:
       - id: ruff-check
         name: ruff check
-        entry: uv run --locked ruff check --fix
+        entry: uv run --project backend --locked ruff check --fix
         language: system
         types_or: [python, pyi]
       - id: ruff-format
         name: ruff format
-        entry: uv run --locked ruff format
+        entry: uv run --project backend --locked ruff format
         language: system
         types_or: [python, pyi]
       - id: openapi
         name: openapi spec
-        entry: uv run --locked python -m app.openapi
+        entry: uv run --directory backend --locked python -m app.openapi
         language: system
-        files: ^app/
+        files: ^backend/app/
         pass_filenames: false
       - id: api-types
         name: frontend api types
         entry: npm --prefix frontend run api:types
         language: system
-        files: ^(app/|docs/api/openapi\.json$)
+        files: ^(backend/app/|docs/api/openapi\.json$)
+        pass_filenames: false
+      - id: biome
+        name: biome check
+        entry: npm --prefix frontend run format
+        language: system
+        files: ^frontend/
         pass_filenames: false

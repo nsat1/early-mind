@@ -11,7 +11,7 @@ from app.core.config import MigrationSettings, Settings
 @pytest.fixture(autouse=True)
 def clear_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in tuple(os.environ):
-        if name.upper().startswith(("DB_", "REDIS_")):
+        if name.upper().startswith(("DB_", "REDIS_", "SMTP_", "MAIL_", "APP_")):
             monkeypatch.delenv(name)
 
 

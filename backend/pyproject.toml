@@ -47,7 +47,7 @@ options = "format REVISION_SCRIPT_FILENAME"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = ["--strict-markers"]
-markers = ["integration: requires running PostgreSQL and Redis"]
+markers = ["integration: requires running PostgreSQL, Redis and Mailpit"]
 
 [tool.ruff]
 target-version = "py314"

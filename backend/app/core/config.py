@@ -1,11 +1,18 @@
+from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, SecretStr, StringConstraints
+from pydantic import Field, HttpUrl, SecretStr, StringConstraints
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 NonEmptyString = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+
+
+class SmtpSecurity(StrEnum):
+    NONE = "none"
+    STARTTLS = "starttls"
+    TLS = "tls"
 
 
 class DatabaseSettings(BaseSettings):
@@ -27,6 +34,13 @@ class Settings(DatabaseSettings):
     redis_port: int = Field(default=6379, ge=1, le=65535)
     redis_db: int = Field(default=0, ge=0, le=15)
     redis_password: SecretStr = Field(min_length=1)
+    smtp_host: NonEmptyString = "127.0.0.1"
+    smtp_port: int = Field(default=1025, ge=1, le=65535)
+    smtp_security: SmtpSecurity = SmtpSecurity.NONE
+    smtp_username: NonEmptyString | None = None
+    smtp_password: SecretStr | None = None
+    mail_from: NonEmptyString = "Early Mind <no-reply@early-mind.local>"
+    app_url: HttpUrl = HttpUrl("http://localhost:5173")
 
 
 class MigrationSettings(DatabaseSettings):

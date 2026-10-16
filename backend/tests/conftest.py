@@ -11,7 +11,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from httpx2 import ASGITransport, AsyncClient
+from httpx2 import ASGITransport, AsyncClient, Client, HTTPError
 from pydantic import Field, SecretStr, ValidationError
 from redis import Redis as SyncRedis
 from redis.asyncio import Redis
@@ -32,6 +32,7 @@ from app.main import create_app
 ROOT = Path(__file__).resolve().parents[1]
 TEST_DATABASE = "early_mind_test"
 TEST_REDIS_DB = 15
+MAILPIT_URL = os.environ.get("MAILPIT_URL", "http://127.0.0.1:8025")
 BACKEND_OPTIONS: dict[str, object] = {"loop_factory": asyncio.SelectorEventLoop}
 
 
@@ -152,6 +153,17 @@ async def redis_client(test_redis: Settings) -> AsyncIterator[Redis]:
         yield client
     finally:
         await client.aclose()
+
+
+@pytest.fixture
+def mailpit() -> Iterator[Client]:
+    with Client(base_url=MAILPIT_URL, timeout=2) as client:
+        try:
+            client.delete("/api/v1/messages")
+        except HTTPError as error:
+            service_unavailable(f"Mailpit is unavailable: {error}")
+        yield client
+        client.delete("/api/v1/messages")
 
 
 @pytest.fixture

@@ -5,6 +5,16 @@ from fastapi import Depends, Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.config import Settings
+
+
+def get_app_settings(request: Request) -> Settings:
+    settings: Settings = request.app.state.settings
+    return settings
+
+
+AppSettings = Annotated[Settings, Depends(get_app_settings)]
+
 
 async def get_db_session(request: Request) -> AsyncIterator[AsyncSession]:
     factory: async_sessionmaker[AsyncSession] = request.app.state.session_factory

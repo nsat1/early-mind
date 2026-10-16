@@ -386,6 +386,71 @@
           }
         }
       }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Зарегистрировать аккаунт родителя",
+        "description": "Создаёт неподтверждённый аккаунт и отправляет письмо со ссылкой подтверждения. Если email уже зарегистрирован, ответ тот же, а письмо сообщает, что аккаунт уже есть: по ответу нельзя узнать, зарегистрирован ли email.",
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Registration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Запрос принят, письмо будет отправлено"
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку или пароль не по правилам",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -814,6 +879,55 @@
         ],
         "title": "Problem"
       },
+      "Registration": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email родителя, сравнивается без учёта регистра",
+            "examples": [
+              "anna.petrova@mail.ru"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "От 8 до 64 символов, любые символы. Не из списка частых паролей и не совпадает с email",
+            "examples": [
+              "мама мыла раму 7"
+            ]
+          },
+          "policy_version": {
+            "type": "string",
+            "const": "2026-10-16",
+            "title": "Policy Version",
+            "description": "Версия политики обработки персональных данных"
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true,
+            "title": "Consent",
+            "description": "Согласие на обработку персональных данных"
+          },
+          "adult": {
+            "type": "boolean",
+            "const": true,
+            "title": "Adult",
+            "description": "Родителю есть 18 лет"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "password",
+          "policy_version",
+          "consent",
+          "adult"
+        ],
+        "title": "Registration"
+      },
       "SessionFinished": {
         "properties": {
           "schema_version": {
@@ -983,6 +1097,10 @@
     {
       "name": "analytics",
       "description": "Обезличенные события аналитики"
+    },
+    {
+      "name": "auth",
+      "description": "Аккаунт родителя: регистрация и вход"
     },
     {
       "name": "health",

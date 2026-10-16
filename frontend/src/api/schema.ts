@@ -104,6 +104,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Зарегистрировать аккаунт родителя
+         * @description Создаёт неподтверждённый аккаунт и отправляет письмо со ссылкой подтверждения. Если email уже зарегистрирован, ответ тот же, а письмо сообщает, что аккаунт уже есть: по ответу нельзя узнать, зарегистрирован ли email.
+         */
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -332,6 +352,40 @@ export interface components {
              * @description Ошибки параметров, только для ответа 422
              */
             errors?: components["schemas"]["ParameterError"][] | null;
+        };
+        /** Registration */
+        Registration: {
+            /**
+             * Email
+             * Format: email
+             * @description Email родителя, сравнивается без учёта регистра
+             * @example anna.petrova@mail.ru
+             */
+            email: string;
+            /**
+             * Password
+             * @description От 8 до 64 символов, любые символы. Не из списка частых паролей и не совпадает с email
+             * @example мама мыла раму 7
+             */
+            password: string;
+            /**
+             * Policy Version
+             * @description Версия политики обработки персональных данных
+             * @constant
+             */
+            policy_version: "2026-10-16";
+            /**
+             * Consent
+             * @description Согласие на обработку персональных данных
+             * @constant
+             */
+            consent: true;
+            /**
+             * Adult
+             * @description Родителю есть 18 лет
+             * @constant
+             */
+            adult: true;
         };
         /** SessionFinished */
         SessionFinished: {
@@ -695,6 +749,70 @@ export interface operations {
                 };
             };
             /** @description База данных недоступна */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Registration"];
+            };
+        };
+        responses: {
+            /** @description Запрос принят, письмо будет отправлено */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Параметры запроса не прошли проверку или пароль не по правилам */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {
                     [name: string]: unknown;

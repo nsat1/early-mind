@@ -15,11 +15,12 @@ async def lifespan(
     settings = settings if settings is not None else get_settings()
     engine, factory = create_database(settings)
     redis = create_redis(settings)
+    app.state.settings = settings
     app.state.session_factory = factory
     app.state.redis = redis
     try:
         yield
     finally:
-        del app.state.session_factory, app.state.redis
+        del app.state.settings, app.state.session_factory, app.state.redis
         await redis.aclose()
         await engine.dispose()

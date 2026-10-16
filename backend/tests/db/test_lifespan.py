@@ -24,8 +24,10 @@ def test_lifespan_opens_and_closes_resources(
 
     async def check() -> None:
         async with app.router.lifespan_context(app):
+            assert app.state.settings is settings
             assert app.state.session_factory is factory
             assert app.state.redis is redis
+        assert not hasattr(app.state, "settings")
         assert not hasattr(app.state, "session_factory")
         assert not hasattr(app.state, "redis")
 

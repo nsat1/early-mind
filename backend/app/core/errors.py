@@ -35,6 +35,18 @@ class ParameterError(BaseModel):
         ),
     ]
     name: Annotated[str, Field(description="Имя параметра", examples=["alphabet_id"])]
+    code: Annotated[
+        str,
+        Field(
+            description=(
+                "Код ошибки для программ: тип ошибки Pydantic (`missing`, "
+                "`literal_error`, `string_pattern_mismatch`…) или правило пароля "
+                "(`password_too_short`, `password_too_long`, "
+                "`password_too_common`, `password_matches_email`)"
+            ),
+            examples=["string_pattern_mismatch"],
+        ),
+    ]
     detail: Annotated[
         str,
         Field(
@@ -74,6 +86,7 @@ def problem_example(status: int, detail: str) -> dict[str, Any]:
             ParameterError(
                 location="path",
                 name="alphabet_id",
+                code="string_pattern_mismatch",
                 detail="String should match pattern '^[a-z]+$'",
             )
         ]
@@ -134,6 +147,7 @@ async def handle_validation_error(
         ParameterError(
             location=str(error["loc"][0]),
             name=".".join(str(part) for part in error["loc"][1:]),
+            code=error["type"],
             detail=error["msg"],
         )
         for error in exc.errors()

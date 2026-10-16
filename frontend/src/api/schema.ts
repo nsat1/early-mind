@@ -283,6 +283,12 @@ export interface components {
              */
             name: string;
             /**
+             * Code
+             * @description Код ошибки для программ: тип ошибки Pydantic (`missing`, `literal_error`, `string_pattern_mismatch`…) или правило пароля (`password_too_short`, `password_too_long`, `password_too_common`, `password_matches_email`)
+             * @example string_pattern_mismatch
+             */
+            code: string;
+            /**
              * Detail
              * @description Что не так со значением
              * @example String should match pattern '^[a-z]+$'
@@ -531,6 +537,7 @@ export interface operations {
                      *         {
                      *           "in": "path",
                      *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]
@@ -614,6 +621,7 @@ export interface operations {
                      *         {
                      *           "in": "path",
                      *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]
@@ -677,6 +685,7 @@ export interface operations {
                      *         {
                      *           "in": "path",
                      *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]

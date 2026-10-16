@@ -155,6 +155,7 @@
                     {
                       "in": "path",
                       "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
                       "detail": "String should match pattern '^[a-z]+$'"
                     }
                   ]
@@ -266,6 +267,7 @@
                     {
                       "in": "path",
                       "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
                       "detail": "String should match pattern '^[a-z]+$'"
                     }
                   ]
@@ -358,6 +360,7 @@
                     {
                       "in": "path",
                       "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
                       "detail": "String should match pattern '^[a-z]+$'"
                     }
                   ]
@@ -708,6 +711,14 @@
               "alphabet_id"
             ]
           },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Код ошибки для программ: тип ошибки Pydantic (`missing`, `literal_error`, `string_pattern_mismatch`…) или правило пароля (`password_too_short`, `password_too_long`, `password_too_common`, `password_matches_email`)",
+            "examples": [
+              "string_pattern_mismatch"
+            ]
+          },
           "detail": {
             "type": "string",
             "title": "Detail",
@@ -721,6 +732,7 @@
         "required": [
           "in",
           "name",
+          "code",
           "detail"
         ],
         "title": "ParameterError"

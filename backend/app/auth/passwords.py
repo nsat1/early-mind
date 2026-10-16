@@ -15,6 +15,12 @@ _password_hasher = PasswordHasher(
 )
 
 
+class PasswordError(ValueError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
 def normalize_password(password: str) -> str:
     return unicodedata.normalize("NFKC", password)
 
@@ -26,17 +32,22 @@ def common_passwords() -> frozenset[str]:
 
 def check_password(password: str, email: str) -> None:
     normalized = normalize_password(password)
-    if not MIN_PASSWORD_LENGTH <= len(normalized) <= MAX_PASSWORD_LENGTH:
-        raise ValueError(
-            f"Password must be {MIN_PASSWORD_LENGTH} to "
-            f"{MAX_PASSWORD_LENGTH} characters long"
+    if len(normalized) < MIN_PASSWORD_LENGTH:
+        raise PasswordError(
+            "password_too_short",
+            f"Password must be at least {MIN_PASSWORD_LENGTH} characters long",
+        )
+    if len(normalized) > MAX_PASSWORD_LENGTH:
+        raise PasswordError(
+            "password_too_long",
+            f"Password must be at most {MAX_PASSWORD_LENGTH} characters long",
         )
     lowered = normalized.casefold()
     if lowered in common_passwords() or any(name in lowered for name in SERVICE_NAMES):
-        raise ValueError("Password is too common")
+        raise PasswordError("password_too_common", "Password is too common")
     address = email.casefold()
     if lowered in {address, address.partition("@")[0]}:
-        raise ValueError("Password must not match email")
+        raise PasswordError("password_matches_email", "Password must not match email")
 
 
 def hash_password(password: str) -> str:

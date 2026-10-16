@@ -6,6 +6,7 @@ from argon2.exceptions import InvalidHashError
 
 from app.auth.passwords import (
     MIN_PASSWORD_LENGTH,
+    PasswordError,
     check_password,
     common_passwords,
     hash_password,
@@ -38,26 +39,29 @@ def test_lookalike_characters_give_same_password() -> None:
 
 
 @pytest.mark.parametrize(
-    "password", ["мама мыла раму 7", "синий-трамвай-42", "a" * 8 + "я" * 56]
+    "password",
+    ["ёжик 123", "мама мыла раму 7", "синий-трамвай-42", "a" * 8 + "я" * 56],
 )
 def test_password_is_accepted(password: str) -> None:
     check_password(password, EMAIL)
 
 
 @pytest.mark.parametrize(
-    ("password", "error"),
+    ("password", "code"),
     [
-        pytest.param("абвгдеж", "8 to 64 characters", id="too-short"),
-        pytest.param("я" * 65, "8 to 64 characters", id="too-long"),
-        pytest.param("QwertyUIOP", "too common", id="common"),
-        pytest.param("Мой EarlyMind 2026", "too common", id="service-name"),
-        pytest.param("anna.petrova", "must not match email", id="email-name"),
-        pytest.param("anna.petrova@MAIL.RU", "must not match email", id="email"),
+        pytest.param("абвгдеж", "password_too_short", id="too-short"),
+        pytest.param("я" * 65, "password_too_long", id="too-long"),
+        pytest.param("QwertyUIOP", "password_too_common", id="common"),
+        pytest.param("Мой EarlyMind 2026", "password_too_common", id="service-name"),
+        pytest.param("anna.petrova", "password_matches_email", id="email-name"),
+        pytest.param("anna.petrova@MAIL.RU", "password_matches_email", id="email"),
     ],
 )
-def test_password_is_rejected(password: str, error: str) -> None:
-    with pytest.raises(ValueError, match=error):
+def test_password_is_rejected(password: str, code: str) -> None:
+    with pytest.raises(PasswordError) as error:
         check_password(password, EMAIL)
+
+    assert error.value.code == code
 
 
 def test_common_passwords_list_is_normalized() -> None:

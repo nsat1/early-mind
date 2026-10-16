@@ -45,6 +45,7 @@ def test_invalid_parameter_returns_errors(client: TestClient) -> None:
             {
                 "in": "query",
                 "name": "kind",
+                "code": "enum",
                 "detail": "Input should be 'vowel', 'consonant' or 'sign'",
             }
         ],

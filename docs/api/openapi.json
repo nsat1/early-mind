@@ -451,6 +451,87 @@
           }
         }
       }
+    },
+    "/api/v1/auth/email-verification": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Подтвердить email",
+        "description": "Подтверждает email по токену из ссылки в письме. Ссылка действует 24 часа и только один раз.",
+        "operationId": "verify_email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailVerification"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Email подтверждён"
+          },
+          "400": {
+            "description": "Ссылка устарела, уже использована или аккаунт удалён",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Invalid or expired link"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -608,6 +689,25 @@
           "first_visit_week"
         ],
         "title": "AppOpenedProperties"
+      },
+      "EmailVerification": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Token",
+            "description": "Токен из ссылки в письме — часть после `#token=`",
+            "examples": [
+              "f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "EmailVerification"
       },
       "HealthResponse": {
         "properties": {

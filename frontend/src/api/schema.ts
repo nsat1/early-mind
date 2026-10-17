@@ -124,6 +124,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Подтвердить email
+         * @description Подтверждает email по токену из ссылки в письме. Ссылка действует 24 часа и только один раз.
+         */
+        post: operations["verify_email"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -210,6 +230,15 @@ export interface components {
              * @example 2026-W42
              */
             first_visit_week: string;
+        };
+        /** EmailVerification */
+        EmailVerification: {
+            /**
+             * Token
+             * @description Токен из ссылки в письме — часть после `#token=`
+             * @example f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI
+             */
+            token: string;
         };
         /** HealthResponse */
         HealthResponse: {
@@ -788,6 +817,87 @@ export interface operations {
                 content?: never;
             };
             /** @description Параметры запроса не прошли проверку или пароль не по правилам */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    verify_email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerification"];
+            };
+        };
+        responses: {
+            /** @description Email подтверждён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ссылка устарела, уже использована или аккаунт удалён */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Bad Request",
+                     *       "status": 400,
+                     *       "detail": "Invalid or expired link"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Параметры запроса не прошли проверку */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -1,24 +1,28 @@
-from fastapi import APIRouter, BackgroundTasks, Response
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
+from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 
 from app.auth.mails import account_exists_mail, verification_mail
 from app.auth.models import Account, Consent
 from app.auth.passwords import PasswordError, check_password, hash_password
-from app.auth.schemas import Registration
-from app.auth.tokens import store_email_token
-from app.core.errors import DATABASE_UNAVAILABLE, INVALID_PARAMETERS, problem_responses
+from app.auth.schemas import EmailVerification, Registration
+from app.auth.tokens import consume_email_token, store_email_token
+from app.core.errors import (
+    COMMON_PROBLEMS,
+    DATABASE_UNAVAILABLE,
+    INVALID_PARAMETERS,
+    problem_responses,
+)
 from app.core.mail import send_mail
 from app.db.dependencies import AppSettings, DbSession, RedisClient
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
+INVALID_LINK = "Invalid or expired link"
 AUTH_PROBLEMS = {
-    422: (
-        "Параметры запроса не прошли проверку или пароль не по правилам",
-        INVALID_PARAMETERS,
-    ),
+    422: COMMON_PROBLEMS[422],
     503: ("База данных или хранилище сессий недоступны", DATABASE_UNAVAILABLE),
 }
 
@@ -41,7 +45,15 @@ def password_problem(error: PasswordError) -> RequestValidationError:
         "зарегистрирован ли email."
     ),
     response_description="Запрос принят, письмо будет отправлено",
-    responses=problem_responses(AUTH_PROBLEMS),
+    responses=problem_responses(
+        AUTH_PROBLEMS
+        | {
+            422: (
+                "Параметры запроса не прошли проверку или пароль не по правилам",
+                INVALID_PARAMETERS,
+            )
+        }
+    ),
 )
 async def register(
     registration: Registration,
@@ -74,3 +86,42 @@ async def register(
         mail = verification_mail(settings, registration.email, token)
     background_tasks.add_task(send_mail, settings, mail)
     return Response(status_code=202)
+
+
+@router.post(
+    "/email-verification",
+    status_code=204,
+    response_class=Response,
+    summary="Подтвердить email",
+    description=(
+        "Подтверждает email по токену из ссылки в письме. Ссылка действует "
+        "24 часа и только один раз."
+    ),
+    response_description="Email подтверждён",
+    responses=problem_responses(
+        {
+            400: (
+                "Ссылка устарела, уже использована или аккаунт удалён",
+                INVALID_LINK,
+            )
+        }
+        | AUTH_PROBLEMS
+    ),
+)
+async def verify_email(
+    verification: EmailVerification, session: DbSession, redis: RedisClient
+) -> Response:
+    account_id = await consume_email_token(redis, verification.token)
+    if account_id is not None:
+        account_id = await session.scalar(
+            update(Account)
+            .where(Account.account_id == account_id)
+            .values(
+                email_verified_at=func.coalesce(Account.email_verified_at, func.now())
+            )
+            .returning(Account.account_id)
+        )
+    if account_id is None:
+        raise HTTPException(400, INVALID_LINK)
+    await session.commit()
+    return Response(status_code=204)

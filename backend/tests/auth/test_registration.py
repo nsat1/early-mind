@@ -1,19 +1,16 @@
 import re
-from collections.abc import Iterator
 from unittest.mock import AsyncMock, Mock
 
 import psycopg
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import HttpUrl
 from redis import Redis as SyncRedis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.auth.passwords import verify_password
 from app.auth.schemas import PRIVACY_POLICY_VERSION
 from app.auth.tokens import token_hash
-from app.core.config import Settings
 from app.core.mail import Mail
 from app.db.dependencies import get_redis
 
@@ -33,40 +30,6 @@ def registration(**changes: object) -> dict[str, object]:
         "consent": True,
         "adult": True,
     } | changes
-
-
-@pytest.fixture
-def settings(test_database: None, test_redis: Settings) -> Settings:
-    return test_redis.model_copy(
-        update={"app_url": HttpUrl("https://early-mind.example/")}
-    )
-
-
-@pytest.fixture
-def stored(app_connection: psycopg.Connection) -> Iterator[psycopg.Connection]:
-    yield app_connection
-    app_connection.execute("DELETE FROM accounts")
-
-
-@pytest.fixture
-def redis_store(settings: Settings) -> Iterator[SyncRedis]:
-    with SyncRedis(
-        host=settings.redis_host,
-        port=settings.redis_port,
-        db=settings.redis_db,
-        password=settings.redis_password.get_secret_value(),
-        decode_responses=True,
-    ) as client:
-        yield client
-
-
-@pytest.fixture
-def sent_mails(monkeypatch: pytest.MonkeyPatch) -> list[Mail]:
-    mails: list[Mail] = []
-    monkeypatch.setattr(
-        "app.auth.router.send_mail", lambda settings, mail: mails.append(mail)
-    )
-    return mails
 
 
 def test_registration_creates_unverified_account(

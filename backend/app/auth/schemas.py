@@ -14,9 +14,11 @@ Email = Annotated[
 ]
 
 
-class Registration(BaseModel):
+class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
 
+
+class Registration(StrictModel):
     email: Email
     password: Annotated[
         str,
@@ -37,3 +39,14 @@ class Registration(BaseModel):
         Field(description="Согласие на обработку персональных данных"),
     ]
     adult: Annotated[Literal[True], Field(description="Родителю есть 18 лет")]
+
+
+class EmailVerification(StrictModel):
+    token: Annotated[
+        str,
+        Field(
+            max_length=64,
+            description="Токен из ссылки в письме — часть после `#token=`",
+            examples=["f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI"],
+        ),
+    ]

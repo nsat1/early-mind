@@ -1,4 +1,3 @@
-import re
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -7,12 +6,12 @@ import pytest
 from fastapi.testclient import TestClient
 from redis import Redis as SyncRedis
 
-from app.auth.schemas import PRIVACY_POLICY_VERSION
 from app.core.mail import Mail
+from tests.auth.accounts import REGISTER_URL, VERIFY_URL, link_token, registration
 
 pytestmark = pytest.mark.integration
 
-URL = "/api/v1/auth/email-verification"
+URL = VERIFY_URL
 INVALID_LINK = "Invalid or expired link"
 VERIFIED_AT = datetime(2026, 1, 15, 9, 30, tzinfo=UTC)
 
@@ -21,21 +20,9 @@ VERIFIED_AT = datetime(2026, 1, 15, 9, 30, tzinfo=UTC)
 def token(
     client: TestClient, stored: psycopg.Connection, sent_mails: list[Mail]
 ) -> str:
-    response = client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "anna.petrova@mail.ru",
-            "password": "мама мыла раму 7",
-            "policy_version": PRIVACY_POLICY_VERSION,
-            "consent": True,
-            "adult": True,
-        },
-    )
-    assert response.status_code == 202
+    assert client.post(REGISTER_URL, json=registration()).status_code == 202
     [mail] = sent_mails
-    link = re.search(r"#token=(\S+)", mail.body)
-    assert link is not None
-    return link[1]
+    return link_token(mail)
 
 
 def test_email_is_verified_only_once(

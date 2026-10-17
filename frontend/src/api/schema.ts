@@ -144,6 +144,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/email-verification/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Отправить письмо подтверждения ещё раз
+         * @description Если аккаунт есть и email не подтверждён, отправляет письмо с новой ссылкой, прежняя перестаёт работать. Не больше 3 писем в час на аккаунт. Ответ одинаковый в любом случае.
+         */
+        post: operations["resend_verification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -475,6 +495,16 @@ export interface components {
              * @example 5
              */
             strong_letters: number;
+        };
+        /** VerificationResend */
+        VerificationResend: {
+            /**
+             * Email
+             * Format: email
+             * @description Email родителя, сравнивается без учёта регистра
+             * @example anna.petrova@mail.ru
+             */
+            email: string;
         };
         /** WordExample */
         WordExample: {
@@ -896,6 +926,70 @@ export interface operations {
                      */
                     "application/problem+json": components["schemas"]["Problem"];
                 };
+            };
+            /** @description Параметры запроса не прошли проверку */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resend_verification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationResend"];
+            };
+        };
+        responses: {
+            /** @description Запрос принят */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Параметры запроса не прошли проверку */
             422: {

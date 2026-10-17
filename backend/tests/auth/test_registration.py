@@ -13,23 +13,12 @@ from app.auth.schemas import PRIVACY_POLICY_VERSION
 from app.auth.tokens import token_hash
 from app.core.mail import Mail
 from app.db.dependencies import get_redis
+from tests.auth.accounts import EMAIL, PHRASE, REGISTER_URL, registration
 
 pytestmark = pytest.mark.integration
 
-URL = "/api/v1/auth/register"
-PHRASE = "мама мыла раму 7"
-EMAIL = "anna.petrova@mail.ru"
+URL = REGISTER_URL
 DAY_SECONDS = 24 * 60 * 60
-
-
-def registration(**changes: object) -> dict[str, object]:
-    return {
-        "email": "Anna.Petrova@Mail.ru",
-        "password": PHRASE,
-        "policy_version": PRIVACY_POLICY_VERSION,
-        "consent": True,
-        "adult": True,
-    } | changes
 
 
 def test_registration_creates_unverified_account(
@@ -146,3 +135,16 @@ def test_account_is_not_saved_without_email_token(
     assert response.status_code == 503
     assert stored.execute("SELECT count(*) FROM accounts").fetchone() == (0,)
     assert sent_mails == []
+
+
+def test_account_exists_mails_are_limited(
+    client: TestClient, stored: psycopg.Connection, sent_mails: list[Mail]
+) -> None:
+    for _ in range(4):
+        assert client.post(URL, json=registration()).status_code == 202
+
+    assert [mail.subject for mail in sent_mails] == [
+        "Подтвердите email для Early Mind",
+        "Аккаунт Early Mind уже есть",
+        "Аккаунт Early Mind уже есть",
+    ]

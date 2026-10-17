@@ -41,6 +41,10 @@ class Registration(StrictModel):
     adult: Annotated[Literal[True], Field(description="Родителю есть 18 лет")]
 
 
+class VerificationResend(StrictModel):
+    email: Email
+
+
 class EmailVerification(StrictModel):
     token: Annotated[
         str,

@@ -1,13 +1,14 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy import func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 
+from app.auth.limits import allow_mail
 from app.auth.mails import account_exists_mail, verification_mail
 from app.auth.models import Account, Consent
 from app.auth.passwords import PasswordError, check_password, hash_password
-from app.auth.schemas import EmailVerification, Registration
+from app.auth.schemas import EmailVerification, Registration, VerificationResend
 from app.auth.tokens import consume_email_token, store_email_token
 from app.core.errors import (
     COMMON_PROBLEMS,
@@ -74,6 +75,9 @@ async def register(
         .returning(Account.account_id)
     )
     if account_id is None:
+        account_id = await session.scalar(
+            select(Account.account_id).where(Account.email == registration.email)
+        )
         mail = account_exists_mail(settings, registration.email)
     else:
         await session.execute(
@@ -82,9 +86,10 @@ async def register(
             )
         )
         token = await store_email_token(redis, account_id)
-        await session.commit()
         mail = verification_mail(settings, registration.email, token)
-    background_tasks.add_task(send_mail, settings, mail)
+    if account_id is not None and await allow_mail(redis, account_id):
+        background_tasks.add_task(send_mail, settings, mail)
+    await session.commit()
     return Response(status_code=202)
 
 
@@ -125,3 +130,36 @@ async def verify_email(
         raise HTTPException(400, INVALID_LINK)
     await session.commit()
     return Response(status_code=204)
+
+
+@router.post(
+    "/email-verification/resend",
+    status_code=202,
+    response_class=Response,
+    summary="Отправить письмо подтверждения ещё раз",
+    description=(
+        "Если аккаунт есть и email не подтверждён, отправляет письмо с новой "
+        "ссылкой, прежняя перестаёт работать. Не больше 3 писем в час на аккаунт. "
+        "Ответ одинаковый в любом случае."
+    ),
+    response_description="Запрос принят",
+    responses=problem_responses(AUTH_PROBLEMS),
+)
+async def resend_verification(
+    resend: VerificationResend,
+    session: DbSession,
+    redis: RedisClient,
+    settings: AppSettings,
+    background_tasks: BackgroundTasks,
+) -> Response:
+    account_id = await session.scalar(
+        select(Account.account_id).where(
+            Account.email == resend.email, Account.email_verified_at.is_(None)
+        )
+    )
+    if account_id is not None and await allow_mail(redis, account_id):
+        token = await store_email_token(redis, account_id)
+        background_tasks.add_task(
+            send_mail, settings, verification_mail(settings, resend.email, token)
+        )
+    return Response(status_code=202)

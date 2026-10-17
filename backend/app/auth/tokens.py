@@ -18,7 +18,14 @@ def email_token_key(token: str) -> str:
 
 async def store_email_token(redis: Redis, account_id: uuid.UUID) -> str:
     token = secrets.token_urlsafe(32)
-    await redis.set(email_token_key(token), str(account_id), ex=EMAIL_TOKEN_TTL)
+    key = email_token_key(token)
+    previous = await redis.set(
+        f"account-email-token:{account_id}", key, ex=EMAIL_TOKEN_TTL, get=True
+    )
+    async with redis.pipeline() as pipeline:
+        if previous is not None:
+            pipeline.delete(previous)
+        await pipeline.set(key, str(account_id), ex=EMAIL_TOKEN_TTL).execute()
     return token
 
 

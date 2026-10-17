@@ -532,6 +532,71 @@
           }
         }
       }
+    },
+    "/api/v1/auth/email-verification/resend": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Отправить письмо подтверждения ещё раз",
+        "description": "Если аккаунт есть и email не подтверждён, отправляет письмо с новой ссылкой, прежняя перестаёт работать. Не больше 3 писем в час на аккаунт. Ответ одинаковый в любом случае.",
+        "operationId": "resend_verification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationResend"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Запрос принят"
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1137,6 +1202,25 @@
           "strong_letters"
         ],
         "title": "SessionFinishedProperties"
+      },
+      "VerificationResend": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email родителя, сравнивается без учёта регистра",
+            "examples": [
+              "anna.petrova@mail.ru"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "VerificationResend"
       },
       "WordExample": {
         "properties": {

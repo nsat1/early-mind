@@ -164,6 +164,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Войти
+         * @description Проверяет email и пароль и ставит cookie сессии. Каждый вход создаёт новую сессию. О неподтверждённом email ответ сообщает только после верного пароля.
+         */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -336,6 +356,22 @@ export interface components {
              * @example /media/ru/letters/m.webp?v=9d41b7e2
              */
             image_url: string | null;
+        };
+        /** Login */
+        Login: {
+            /**
+             * Email
+             * Format: email
+             * @description Email родителя, сравнивается без учёта регистра
+             * @example anna.petrova@mail.ru
+             */
+            email: string;
+            /**
+             * Password
+             * @description Пароль аккаунта
+             * @example мама мыла раму 7
+             */
+            password: string;
         };
         /** ParameterError */
         ParameterError: {
@@ -990,6 +1026,106 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Параметры запроса не прошли проверку */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Login"];
+            };
+        };
+        responses: {
+            /** @description Вход выполнен */
+            204: {
+                headers: {
+                    /** @description `__Host-session=<идентификатор>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=7776000` */
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Неверный email или пароль */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unauthorized",
+                     *       "status": 401,
+                     *       "detail": "Invalid email or password"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Пароль верный, но email не подтверждён */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Email not verified"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Параметры запроса не прошли проверку */
             422: {

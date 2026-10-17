@@ -1,3 +1,4 @@
+import secrets
 import unicodedata
 from functools import cache
 from pathlib import Path
@@ -59,3 +60,15 @@ def verify_password(password: str, password_hash: str) -> bool:
         return _password_hasher.verify(password_hash, normalize_password(password))
     except VerifyMismatchError:
         return False
+
+
+@cache
+def dummy_password_hash() -> str:
+    return hash_password(secrets.token_urlsafe(16))
+
+
+def verify_account_password(password: str, password_hash: str | None) -> bool:
+    if password_hash is None:
+        verify_password(password, dummy_password_hash())
+        return False
+    return verify_password(password, password_hash)

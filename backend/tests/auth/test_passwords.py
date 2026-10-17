@@ -9,7 +9,9 @@ from app.auth.passwords import (
     PasswordError,
     check_password,
     common_passwords,
+    dummy_password_hash,
     hash_password,
+    verify_account_password,
     verify_password,
 )
 
@@ -30,6 +32,19 @@ def test_password_hashing() -> None:
 def test_invalid_hash_is_not_a_password_mismatch() -> None:
     with pytest.raises(InvalidHashError):
         verify_password(secrets.token_urlsafe(16), "invalid-hash")
+
+
+def test_unknown_account_still_checks_a_hash(monkeypatch: pytest.MonkeyPatch) -> None:
+    checked: list[str] = []
+
+    def matching(password: str, password_hash: str) -> bool:
+        checked.append(password_hash)
+        return True
+
+    monkeypatch.setattr("app.auth.passwords.verify_password", matching)
+
+    assert not verify_account_password(secrets.token_urlsafe(16), None)
+    assert checked == [dummy_password_hash()]
 
 
 def test_lookalike_characters_give_same_password() -> None:

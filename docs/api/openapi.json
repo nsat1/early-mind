@@ -409,6 +409,22 @@
           "202": {
             "description": "Запрос принят, письмо будет отправлено"
           },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку или пароль не по правилам",
             "content": {
@@ -473,6 +489,22 @@
         "responses": {
           "204": {
             "description": "Email подтверждён"
+          },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
           },
           "400": {
             "description": "Ссылка устарела, уже использована или аккаунт удалён",
@@ -555,6 +587,22 @@
           "202": {
             "description": "Запрос принят"
           },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку",
             "content": {
@@ -628,6 +676,22 @@
               }
             }
           },
+          "403": {
+            "description": "Пароль верный, но email не подтверждён, или запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Email not verified"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Неверный email или пароль",
             "content": {
@@ -640,22 +704,6 @@
                   "title": "Unauthorized",
                   "status": 401,
                   "detail": "Invalid email or password"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Пароль верный, но email не подтверждён",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                },
-                "example": {
-                  "type": "about:blank",
-                  "title": "Forbidden",
-                  "status": 403,
-                  "detail": "Email not verified"
                 }
               }
             }
@@ -739,6 +787,22 @@
           "204": {
             "description": "Сессия завершена"
           },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
           "503": {
             "description": "База данных или хранилище сессий недоступны",
             "content": {
@@ -774,6 +838,22 @@
         "responses": {
           "204": {
             "description": "Все сессии завершены"
+          },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
           },
           "401": {
             "description": "Нет действующей сессии",

@@ -12,7 +12,7 @@
 
 1. Установите [uv](https://docs.astral.sh/uv/getting-started/installation/), в папке `backend` `uv sync --locked`. В PyCharm выберите интерпретатор `backend/.venv` и укажите `backend` рабочей папкой конфигурации запуска.
 2. Запуск API: `uv run --locked uvicorn app.main:create_app --factory --loop asyncio:SelectorEventLoop`.
-3. Откройте [Swagger UI](http://127.0.0.1:8000/docs).
+3. Swagger UI открывайте через фронтенд: http://localhost:5173/docs. Изменяющие запросы аккаунта API принимает только с адреса приложения `APP_URL`.
 
 ## Фронтенд
 

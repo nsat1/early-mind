@@ -951,6 +951,23 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Параметры запроса не прошли проверку или пароль не по правилам */
             422: {
                 headers: {
@@ -1032,6 +1049,23 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description Параметры запроса не прошли проверку */
             422: {
                 headers: {
@@ -1095,6 +1129,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
             };
             /** @description Параметры запроса не прошли проверку */
             422: {
@@ -1179,7 +1230,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description Пароль верный, но email не подтверждён */
+            /** @description Пароль верный, но email не подтверждён, или запрос пришёл с чужого сайта */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1275,6 +1326,23 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {
@@ -1322,6 +1390,23 @@ export interface operations {
                      *       "title": "Unauthorized",
                      *       "status": 401,
                      *       "detail": "Not authenticated"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];

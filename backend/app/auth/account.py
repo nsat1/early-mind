@@ -1,14 +1,21 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 
-from app.auth.dependencies import NOT_AUTHENTICATED, CurrentSession, not_authenticated
+from app.auth.dependencies import (
+    NOT_AUTHENTICATED,
+    CurrentSession,
+    check_origin,
+    not_authenticated,
+)
 from app.auth.models import Account
 from app.auth.router import AUTH_PROBLEMS
 from app.auth.schemas import AccountOut
 from app.core.errors import problem_responses
 from app.db.dependencies import DbSession
 
-router = APIRouter(prefix="/api/v1/account", tags=["account"])
+router = APIRouter(
+    prefix="/api/v1/account", tags=["account"], dependencies=[Depends(check_origin)]
+)
 
 
 @router.get(

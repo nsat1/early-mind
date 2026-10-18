@@ -20,6 +20,7 @@ def settings(test_database: None, test_redis: Settings) -> Settings:
 @pytest.fixture
 def client(client: TestClient) -> TestClient:
     client.base_url = "https://testserver"
+    client.headers["Origin"] = "https://early-mind.example"
     return client
 
 

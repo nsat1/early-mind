@@ -6,7 +6,13 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 
-from app.auth.dependencies import NOT_AUTHENTICATED, CurrentSession, session_cookie
+from app.auth.dependencies import (
+    NOT_AUTHENTICATED,
+    ORIGIN_NOT_ALLOWED,
+    CurrentSession,
+    check_origin,
+    session_cookie,
+)
 from app.auth.limits import (
     LOGIN_ATTEMPTS,
     allow_mail,
@@ -46,7 +52,14 @@ from app.core.errors import (
 from app.core.mail import send_mail
 from app.db.dependencies import AppSettings, DbSession, RedisClient
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(
+    prefix="/api/v1/auth",
+    tags=["auth"],
+    dependencies=[Depends(check_origin)],
+    responses=problem_responses(
+        {403: ("Запрос пришёл с чужого сайта", ORIGIN_NOT_ALLOWED)}
+    ),
+)
 
 INVALID_LINK = "Invalid or expired link"
 INVALID_CREDENTIALS = "Invalid email or password"
@@ -59,7 +72,10 @@ AUTH_PROBLEMS = {
 LOGIN_PROBLEMS = problem_responses(
     {
         401: ("Неверный email или пароль", INVALID_CREDENTIALS),
-        403: ("Пароль верный, но email не подтверждён", EMAIL_NOT_VERIFIED),
+        403: (
+            "Пароль верный, но email не подтверждён, или запрос пришёл с чужого сайта",
+            EMAIL_NOT_VERIFIED,
+        ),
         429: (
             "Вход приостановлен после 5 неудачных попыток за 15 минут",
             TOO_MANY_LOGIN_ATTEMPTS,

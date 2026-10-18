@@ -9,6 +9,8 @@ export default defineConfig({
     proxy: {
       "/api": API_ORIGIN,
       "/media": API_ORIGIN,
+      "/docs": API_ORIGIN,
+      "/openapi.json": API_ORIGIN,
     },
   },
   test: {

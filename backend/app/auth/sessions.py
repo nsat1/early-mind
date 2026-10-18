@@ -68,6 +68,28 @@ async def read_session(redis: Redis, session_id: str) -> Session | None:
     return Session(uuid.UUID(stored["account_id"]), session_hash)
 
 
+async def end_session(redis: Redis, session_id: str) -> None:
+    session_hash = token_hash(session_id)
+    session_key = f"session:{session_hash}"
+    account_id = await redis.hget(session_key, "account_id")
+    if account_id is None:
+        return
+    async with redis.pipeline() as pipeline:
+        await (
+            pipeline.delete(session_key)
+            .srem(f"account-sessions:{account_id}", session_hash)
+            .execute()
+        )
+
+
+async def end_account_sessions(redis: Redis, account_id: uuid.UUID) -> None:
+    sessions_key = f"account-sessions:{account_id}"
+    session_hashes = await redis.smembers(sessions_key)
+    await redis.delete(
+        sessions_key, *(f"session:{session_hash}" for session_hash in session_hashes)
+    )
+
+
 def expired_session_cookie() -> str:
     response = Response()
     response.delete_cookie(

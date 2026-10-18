@@ -727,6 +727,94 @@
         }
       }
     },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Выйти",
+        "description": "Завершает текущую сессию и удаляет cookie. Если сессии уже нет, ответ тот же.",
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": "Сессия завершена"
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Выйти на всех устройствах",
+        "description": "Завершает все сессии аккаунта, включая текущую, и удаляет cookie.",
+        "operationId": "logout_all",
+        "responses": {
+          "204": {
+            "description": "Все сессии завершены"
+          },
+          "401": {
+            "description": "Нет действующей сессии",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Not authenticated"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
     "/api/v1/account": {
       "get": {
         "tags": [

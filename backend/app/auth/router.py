@@ -1,9 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Response
+from typing import Annotated
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 
+from app.auth.dependencies import NOT_AUTHENTICATED, CurrentSession, session_cookie
 from app.auth.limits import (
     LOGIN_ATTEMPTS,
     allow_mail,
@@ -26,7 +29,13 @@ from app.auth.schemas import (
     Registration,
     VerificationResend,
 )
-from app.auth.sessions import create_session, set_session_cookie
+from app.auth.sessions import (
+    create_session,
+    end_account_sessions,
+    end_session,
+    expired_session_cookie,
+    set_session_cookie,
+)
 from app.auth.tokens import consume_email_token, store_email_token
 from app.core.errors import (
     COMMON_PROBLEMS,
@@ -261,3 +270,42 @@ async def login(
     response = Response(status_code=204)
     set_session_cookie(response, await create_session(redis, account.account_id))
     return response
+
+
+def logged_out() -> Response:
+    return Response(status_code=204, headers={"Set-Cookie": expired_session_cookie()})
+
+
+@router.post(
+    "/logout",
+    status_code=204,
+    response_class=Response,
+    summary="Выйти",
+    description=(
+        "Завершает текущую сессию и удаляет cookie. Если сессии уже нет, ответ тот же."
+    ),
+    response_description="Сессия завершена",
+    responses=problem_responses({503: AUTH_PROBLEMS[503]}),
+)
+async def logout(
+    redis: RedisClient, session_id: Annotated[str | None, Depends(session_cookie)]
+) -> Response:
+    if session_id is not None:
+        await end_session(redis, session_id)
+    return logged_out()
+
+
+@router.post(
+    "/logout-all",
+    status_code=204,
+    response_class=Response,
+    summary="Выйти на всех устройствах",
+    description="Завершает все сессии аккаунта, включая текущую, и удаляет cookie.",
+    response_description="Все сессии завершены",
+    responses=problem_responses(
+        {401: ("Нет действующей сессии", NOT_AUTHENTICATED), 503: AUTH_PROBLEMS[503]}
+    ),
+)
+async def logout_all(current: CurrentSession, redis: RedisClient) -> Response:
+    await end_account_sessions(redis, current.account_id)
+    return logged_out()

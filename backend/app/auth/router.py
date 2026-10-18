@@ -4,7 +4,14 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 
-from app.auth.limits import allow_mail
+from app.auth.limits import (
+    LOGIN_ATTEMPTS,
+    allow_mail,
+    count_login_attempt,
+    login_failures_key,
+    login_retry_after,
+    pause_login,
+)
 from app.auth.mails import account_exists_mail, verification_mail
 from app.auth.models import Account, Consent
 from app.auth.passwords import (
@@ -35,9 +42,27 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 INVALID_LINK = "Invalid or expired link"
 INVALID_CREDENTIALS = "Invalid email or password"
 EMAIL_NOT_VERIFIED = "Email not verified"
+TOO_MANY_LOGIN_ATTEMPTS = "Too many login attempts"
 AUTH_PROBLEMS = {
     422: COMMON_PROBLEMS[422],
     503: ("База данных или хранилище сессий недоступны", DATABASE_UNAVAILABLE),
+}
+LOGIN_PROBLEMS = problem_responses(
+    {
+        401: ("Неверный email или пароль", INVALID_CREDENTIALS),
+        403: ("Пароль верный, но email не подтверждён", EMAIL_NOT_VERIFIED),
+        429: (
+            "Вход приостановлен после 5 неудачных попыток за 15 минут",
+            TOO_MANY_LOGIN_ATTEMPTS,
+        ),
+    }
+    | AUTH_PROBLEMS
+)
+LOGIN_PROBLEMS[429]["headers"] = {
+    "Retry-After": {
+        "description": "Через сколько секунд можно повторить вход",
+        "schema": {"type": "integer"},
+    }
 }
 
 
@@ -202,15 +227,18 @@ async def resend_verification(
             }
         }
     }
-    | problem_responses(
-        {
-            401: ("Неверный email или пароль", INVALID_CREDENTIALS),
-            403: ("Пароль верный, но email не подтверждён", EMAIL_NOT_VERIFIED),
-        }
-        | AUTH_PROBLEMS
-    ),
+    | LOGIN_PROBLEMS,
 )
-async def login(credentials: Login, session: DbSession, redis: RedisClient) -> Response:
+async def login(
+    credentials: Login, session: DbSession, redis: RedisClient, settings: AppSettings
+) -> Response:
+    failures_key = login_failures_key(settings.auth_secret, credentials.email)
+    attempt = await count_login_attempt(redis, failures_key)
+    if attempt > LOGIN_ATTEMPTS:
+        retry_after = await login_retry_after(redis, failures_key)
+        raise HTTPException(
+            429, TOO_MANY_LOGIN_ATTEMPTS, headers={"Retry-After": str(retry_after)}
+        )
     account = (
         await session.execute(
             select(
@@ -224,7 +252,10 @@ async def login(credentials: Login, session: DbSession, redis: RedisClient) -> R
         None if account is None else account.password_hash,
     )
     if account is None or not valid:
+        if attempt == LOGIN_ATTEMPTS:
+            await pause_login(redis, failures_key)
         raise HTTPException(401, INVALID_CREDENTIALS)
+    await redis.delete(failures_key)
     if account.email_verified_at is None:
         raise HTTPException(403, EMAIL_NOT_VERIFIED)
     response = Response(status_code=204)

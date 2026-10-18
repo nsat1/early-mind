@@ -41,6 +41,7 @@ class Settings(DatabaseSettings):
     smtp_password: SecretStr | None = None
     mail_from: NonEmptyString = "Early Mind <no-reply@early-mind.local>"
     app_url: HttpUrl = HttpUrl("http://localhost:5173")
+    auth_secret: SecretStr = Field(min_length=32)
 
 
 class MigrationSettings(DatabaseSettings):

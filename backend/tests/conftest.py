@@ -75,6 +75,7 @@ def settings() -> Settings:
         db_password=secrets.token_urlsafe(16),
         redis_host="redis.invalid",
         redis_password=secrets.token_urlsafe(16),
+        auth_secret=secrets.token_urlsafe(32),
     )
 
 
@@ -130,7 +131,7 @@ def test_redis() -> Iterator[Settings]:
     try:
         settings = Settings(redis_db=TEST_REDIS_DB)
     except ValidationError:
-        service_unavailable("REDIS_PASSWORD is not set")
+        service_unavailable("REDIS_PASSWORD or AUTH_SECRET is not set")
     with SyncRedis(
         host=settings.redis_host,
         port=settings.redis_port,

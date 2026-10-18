@@ -660,6 +660,30 @@
               }
             }
           },
+          "429": {
+            "description": "Вход приостановлен после 5 неудачных попыток за 15 минут",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить вход",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many login attempts"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку",
             "content": {

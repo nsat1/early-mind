@@ -3,7 +3,7 @@
 ## PostgreSQL, Redis и почта
 
 1. Установите и запустите [Docker Desktop](https://docs.docker.com/desktop/).
-2. Скопируйте `.env.example` в `.env` и задайте `POSTGRES_PASSWORD`, `DB_PASSWORD`, `DB_MIGRATION_PASSWORD` и `REDIS_PASSWORD`.
+2. Скопируйте `.env.example` в `.env` и задайте `POSTGRES_PASSWORD`, `DB_PASSWORD`, `DB_MIGRATION_PASSWORD`, `REDIS_PASSWORD` и `AUTH_SECRET` — не короче 32 символов: `python -c "import secrets; print(secrets.token_hex(32))"`.
 3. Запуск: `docker compose up -d --wait`. Письма, которые отправляет приложение, видны на http://localhost:8025.
 4. В папке `backend` примените миграции: `uv run --locked alembic upgrade head`.
 5. Контент: `uv run --locked python -m app.alphabet.sync`.

@@ -1152,6 +1152,25 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Вход приостановлен после 5 неудачных попыток за 15 минут */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить вход */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many login attempts"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {

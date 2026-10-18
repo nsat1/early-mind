@@ -29,9 +29,9 @@ jobs:
         env:
           SKIP: biome
         run: uv run --project backend --locked pre-commit run --all-files --show-diff-on-failure
-      - name: Generate database passwords
+      - name: Generate secrets
         run: |
-          for name in POSTGRES_PASSWORD DB_PASSWORD DB_MIGRATION_PASSWORD REDIS_PASSWORD; do
+          for name in POSTGRES_PASSWORD DB_PASSWORD DB_MIGRATION_PASSWORD REDIS_PASSWORD AUTH_SECRET; do
             echo "$name=$(openssl rand -hex 32)"
           done > .env
       - name: Start services

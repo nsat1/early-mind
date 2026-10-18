@@ -11,7 +11,9 @@ from app.core.config import MigrationSettings, Settings
 @pytest.fixture(autouse=True)
 def clear_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in tuple(os.environ):
-        if name.upper().startswith(("DB_", "REDIS_", "SMTP_", "MAIL_", "APP_")):
+        if name.upper().startswith(
+            ("DB_", "REDIS_", "SMTP_", "MAIL_", "APP_", "AUTH_")
+        ):
             monkeypatch.delenv(name)
 
 
@@ -22,7 +24,8 @@ def test_file_and_priorities(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
         f"POSTGRES_PASSWORD=ignored\nDB_PASSWORD='{password}'\n"
         "DB_HOST=' db '\nDB_NAME=' early_mind '\n"
         "DB_USER=' early_mind_app '\nDB_PORT=5433\n"
-        f"REDIS_PASSWORD='{password}'\nREDIS_HOST=' redis '\nREDIS_PORT=6380\n",
+        f"REDIS_PASSWORD='{password}'\nREDIS_HOST=' redis '\nREDIS_PORT=6380\n"
+        f"AUTH_SECRET={secrets.token_urlsafe(32)}\n",
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path.parent)
@@ -48,10 +51,11 @@ def valid_settings() -> dict[str, object]:
     return {
         "db_password": secrets.token_urlsafe(16),
         "redis_password": secrets.token_urlsafe(16),
+        "auth_secret": secrets.token_urlsafe(32),
     }
 
 
-@pytest.mark.parametrize("secret", ["db_password", "redis_password"])
+@pytest.mark.parametrize("secret", ["db_password", "redis_password", "auth_secret"])
 def test_secrets_are_required(secret: str) -> None:
     values = valid_settings()
     del values[secret]
@@ -66,6 +70,7 @@ def test_secrets_are_required(secret: str) -> None:
         {"redis_port": "hidden-input"},
         {"redis_db": 16},
         {"redis_host": " "},
+        {"auth_secret": "hidden-input"},
     ],
 )
 def test_invalid_settings(values: dict[str, object]) -> None:
@@ -81,7 +86,7 @@ def test_roles_do_not_share_credentials() -> None:
     assert "db_migration_password" not in Settings.model_fields
     assert "db_password" not in MigrationSettings.model_fields
     password = secrets.token_urlsafe(16)
-    settings = Settings(_env_file=None, db_password=password, redis_password=password)
+    settings = Settings(_env_file=None, **valid_settings())
     assert settings.db_user == "early_mind_app"
     migration = MigrationSettings(_env_file=None, db_migration_password=password)
     assert migration.db_migration_user == "early_mind_migrator"

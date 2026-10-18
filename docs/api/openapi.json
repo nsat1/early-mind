@@ -726,10 +726,86 @@
           }
         }
       }
+    },
+    "/api/v1/account": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Данные аккаунта",
+        "description": "Email аккаунта для экрана родителя. Нужен вход. Каждый запрос продлевает сессию на 30 дней, но не дальше 90 дней от входа.",
+        "operationId": "get_account",
+        "responses": {
+          "200": {
+            "description": "Аккаунт",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет действующей сессии, cookie удаляется",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Not authenticated"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccountOut": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "Email аккаунта",
+            "examples": [
+              "anna.petrova@mail.ru"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "AccountOut"
+      },
       "AnswerGiven": {
         "properties": {
           "schema_version": {
@@ -1428,9 +1504,21 @@
         ],
         "title": "WordExample"
       }
+    },
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "description": "Cookie сессии: ставится при входе, браузер отправляет её сам",
+        "in": "cookie",
+        "name": "__Host-session"
+      }
     }
   },
   "tags": [
+    {
+      "name": "account",
+      "description": "Аккаунт родителя после входа"
+    },
     {
       "name": "alphabet",
       "description": "Азбука: буквы алфавита и слова-примеры"

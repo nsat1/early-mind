@@ -184,10 +184,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Данные аккаунта
+         * @description Email аккаунта для экрана родителя. Нужен вход. Каждый запрос продлевает сессию на 30 дней, но не дальше 90 дней от входа.
+         */
+        get: operations["get_account"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountOut */
+        AccountOut: {
+            /**
+             * Email
+             * @description Email аккаунта
+             * @example anna.petrova@mail.ru
+             */
+            email: string;
+        };
         /** AnswerGiven */
         AnswerGiven: {
             /**
@@ -1166,6 +1195,60 @@ export interface operations {
                      *       "title": "Too Many Requests",
                      *       "status": 429,
                      *       "detail": "Too many login attempts"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_account: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Аккаунт */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Нет действующей сессии, cookie удаляется */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unauthorized",
+                     *       "status": 401,
+                     *       "detail": "Not authenticated"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];

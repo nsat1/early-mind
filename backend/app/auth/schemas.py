@@ -45,6 +45,12 @@ class VerificationResend(StrictModel):
     email: Email
 
 
+class AccountOut(BaseModel):
+    email: Annotated[
+        str, Field(description="Email аккаунта", examples=["anna.petrova@mail.ru"])
+    ]
+
+
 class Login(StrictModel):
     email: Email
     password: Annotated[

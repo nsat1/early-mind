@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import psycopg
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import HttpUrl
 from redis import Redis as SyncRedis
 
@@ -14,6 +15,12 @@ def settings(test_database: None, test_redis: Settings) -> Settings:
     return test_redis.model_copy(
         update={"app_url": HttpUrl("https://early-mind.example/")}
     )
+
+
+@pytest.fixture
+def client(client: TestClient) -> TestClient:
+    client.base_url = "https://testserver"
+    return client
 
 
 @pytest.fixture

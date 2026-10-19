@@ -35,12 +35,16 @@ def confirm(client: TestClient, token: str, phrase: str = NEW_PHRASE) -> Respons
 
 
 def test_reset_changes_password_and_verifies_email(
-    client: TestClient, reset_token: str
+    client: TestClient, reset_token: str, sent_mails: list[Mail]
 ) -> None:
     response = confirm(client, reset_token)
 
     assert response.status_code == 204
     assert "; Max-Age=0; Path=/; SameSite=lax; Secure" in response.headers["set-cookie"]
+    assert (sent_mails[-1].to, sent_mails[-1].subject) == (
+        EMAIL,
+        "Пароль Early Mind изменён",
+    )
     assert log_in(client).status_code == 401
     assert log_in(client, NEW_PHRASE).status_code == 204
     repeated = confirm(client, reset_token)

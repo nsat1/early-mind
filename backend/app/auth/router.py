@@ -14,14 +14,19 @@ from app.auth.dependencies import (
     session_cookie,
 )
 from app.auth.limits import (
-    LOGIN_ATTEMPTS,
+    MAX_ATTEMPTS,
     allow_mail,
-    count_login_attempt,
+    attempts_retry_after,
+    count_attempt,
     login_failures_key,
-    login_retry_after,
-    pause_login,
+    pause_attempts,
 )
-from app.auth.mails import account_exists_mail, reset_mail, verification_mail
+from app.auth.mails import (
+    account_exists_mail,
+    password_changed_mail,
+    reset_mail,
+    verification_mail,
+)
 from app.auth.models import Account, Consent
 from app.auth.passwords import (
     PasswordError,
@@ -97,12 +102,13 @@ LOGIN_PROBLEMS = problem_responses(
     }
     | AUTH_PROBLEMS
 )
-LOGIN_PROBLEMS[429]["headers"] = {
+RETRY_AFTER_HEADER = {
     "Retry-After": {
-        "description": "Через сколько секунд можно повторить вход",
+        "description": "Через сколько секунд можно повторить",
         "schema": {"type": "integer"},
     }
 }
+LOGIN_PROBLEMS[429]["headers"] = RETRY_AFTER_HEADER
 
 
 def password_problem(error: PasswordError) -> RequestValidationError:
@@ -264,9 +270,9 @@ async def login(
     credentials: Login, session: DbSession, redis: RedisClient, settings: AppSettings
 ) -> Response:
     failures_key = login_failures_key(settings.auth_secret, credentials.email)
-    attempt = await count_login_attempt(redis, failures_key)
-    if attempt > LOGIN_ATTEMPTS:
-        retry_after = await login_retry_after(redis, failures_key)
+    attempt = await count_attempt(redis, failures_key)
+    if attempt > MAX_ATTEMPTS:
+        retry_after = await attempts_retry_after(redis, failures_key)
         raise HTTPException(
             429, TOO_MANY_LOGIN_ATTEMPTS, headers={"Retry-After": str(retry_after)}
         )
@@ -283,8 +289,8 @@ async def login(
         None if account is None else account.password_hash,
     )
     if account is None or not valid:
-        if attempt == LOGIN_ATTEMPTS:
-            await pause_login(redis, failures_key)
+        if attempt == MAX_ATTEMPTS:
+            await pause_attempts(redis, failures_key)
         raise HTTPException(401, INVALID_CREDENTIALS)
     await redis.delete(failures_key)
     if account.email_verified_at is None:
@@ -386,6 +392,7 @@ async def confirm_password_reset(
     session: DbSession,
     redis: RedisClient,
     settings: AppSettings,
+    background_tasks: BackgroundTasks,
 ) -> Response:
     account_id = await find_token(redis, RESET_TOKEN, reset.token)
     email = None
@@ -413,4 +420,7 @@ async def confirm_password_reset(
     await end_account_sessions(redis, account_id)
     await redis.delete(login_failures_key(settings.auth_secret, email))
     await session.commit()
+    background_tasks.add_task(
+        send_mail, settings, password_changed_mail(settings, email)
+    )
     return logged_out()

@@ -284,10 +284,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/account/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Сменить пароль
+         * @description Меняет пароль после проверки текущего и завершает остальные сессии аккаунта, текущая продолжает работать. После 5 неверных текущих паролей за 15 минут проверка приостанавливается. На email приходит письмо о смене пароля.
+         */
+        put: operations["change_password"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Удалить аккаунт
+         * @description Безвозвратно удаляет аккаунт после проверки пароля: согласия, все сессии, ссылки из писем и счётчики попыток. Лимит неверных паролей общий со сменой пароля.
+         */
+        post: operations["delete_account"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountDeletion */
+        AccountDeletion: {
+            /**
+             * Password
+             * @description Пароль аккаунта
+             * @example мама мыла раму 7
+             */
+            password: string;
+        };
         /** AccountOut */
         AccountOut: {
             /**
@@ -508,6 +557,21 @@ export interface components {
              * @example String should match pattern '^[a-z]+$'
              */
             detail: string;
+        };
+        /** PasswordChange */
+        PasswordChange: {
+            /**
+             * Current Password
+             * @description Пароль аккаунта
+             * @example мама мыла раму 7
+             */
+            current_password: string;
+            /**
+             * Password
+             * @description Новый пароль: от 8 до 64 символов, не из списка частых паролей и не совпадает с email
+             * @example синий-трамвай-42
+             */
+            password: string;
         };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
@@ -1340,7 +1404,7 @@ export interface operations {
             /** @description Вход приостановлен после 5 неудачных попыток за 15 минут */
             429: {
                 headers: {
-                    /** @description Через сколько секунд можно повторить вход */
+                    /** @description Через сколько секунд можно повторить */
                     "Retry-After"?: number;
                     [name: string]: unknown;
                 };
@@ -1705,6 +1769,240 @@ export interface operations {
                      *       "title": "Unauthorized",
                      *       "status": 401,
                      *       "detail": "Not authenticated"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    change_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChange"];
+            };
+        };
+        responses: {
+            /** @description Пароль изменён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет действующей сессии, cookie удаляется */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unauthorized",
+                     *       "status": 401,
+                     *       "detail": "Not authenticated"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Пароль неверный или запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Incorrect password"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Параметры запроса не прошли проверку или пароль не по правилам */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Пароль неверный 5 раз за 15 минут, проверка приостановлена */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many password attempts"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    delete_account: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeletion"];
+            };
+        };
+        responses: {
+            /** @description Аккаунт удалён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Нет действующей сессии, cookie удаляется */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unauthorized",
+                     *       "status": 401,
+                     *       "detail": "Not authenticated"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Пароль неверный или запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Incorrect password"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Параметры запроса не прошли проверку */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Пароль неверный 5 раз за 15 минут, проверка приостановлена */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many password attempts"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];

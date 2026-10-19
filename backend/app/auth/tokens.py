@@ -19,6 +19,9 @@ class TokenKind:
     def key(self, token: str) -> str:
         return f"{self.prefix}:{token_hash(token)}"
 
+    def pointer(self, account_id: uuid.UUID) -> str:
+        return f"account-{self.prefix}:{account_id}"
+
 
 EMAIL_TOKEN = TokenKind("email-token", timedelta(hours=24))
 RESET_TOKEN = TokenKind("reset-token", timedelta(hours=1))
@@ -27,9 +30,7 @@ RESET_TOKEN = TokenKind("reset-token", timedelta(hours=1))
 async def store_token(redis: Redis, kind: TokenKind, account_id: uuid.UUID) -> str:
     token = secrets.token_urlsafe(32)
     key = kind.key(token)
-    previous = await redis.set(
-        f"account-{kind.prefix}:{account_id}", key, ex=kind.ttl, get=True
-    )
+    previous = await redis.set(kind.pointer(account_id), key, ex=kind.ttl, get=True)
     async with redis.pipeline() as pipeline:
         if previous is not None:
             pipeline.delete(previous)
@@ -45,3 +46,10 @@ async def find_token(redis: Redis, kind: TokenKind, token: str) -> uuid.UUID | N
 async def consume_token(redis: Redis, kind: TokenKind, token: str) -> uuid.UUID | None:
     account_id = await redis.getdel(kind.key(token))
     return None if account_id is None else uuid.UUID(account_id)
+
+
+async def revoke_tokens(redis: Redis, account_id: uuid.UUID) -> None:
+    for kind in (EMAIL_TOKEN, RESET_TOKEN):
+        key = await redis.getdel(kind.pointer(account_id))
+        if key is not None:
+            await redis.delete(key)

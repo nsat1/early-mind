@@ -712,7 +712,7 @@
             "description": "Вход приостановлен после 5 неудачных попыток за 15 минут",
             "headers": {
               "Retry-After": {
-                "description": "Через сколько секунд можно повторить вход",
+                "description": "Через сколько секунд можно повторить",
                 "schema": {
                   "type": "integer"
                 }
@@ -1131,10 +1131,280 @@
           }
         ]
       }
+    },
+    "/api/v1/account/password": {
+      "put": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Сменить пароль",
+        "description": "Меняет пароль после проверки текущего и завершает остальные сессии аккаунта, текущая продолжает работать. После 5 неверных текущих паролей за 15 минут проверка приостанавливается. На email приходит письмо о смене пароля.",
+        "operationId": "change_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Пароль изменён"
+          },
+          "401": {
+            "description": "Нет действующей сессии, cookie удаляется",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Not authenticated"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Пароль неверный или запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Incorrect password"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку или пароль не по правилам",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Пароль неверный 5 раз за 15 минут, проверка приостановлена",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many password attempts"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/v1/account/deletion": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Удалить аккаунт",
+        "description": "Безвозвратно удаляет аккаунт после проверки пароля: согласия, все сессии, ссылки из писем и счётчики попыток. Лимит неверных паролей общий со сменой пароля.",
+        "operationId": "delete_account",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeletion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Аккаунт удалён"
+          },
+          "401": {
+            "description": "Нет действующей сессии, cookie удаляется",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Not authenticated"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Пароль неверный или запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Incorrect password"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Пароль неверный 5 раз за 15 минут, проверка приостановлена",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many password attempts"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AccountDeletion": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Пароль аккаунта",
+            "examples": [
+              "мама мыла раму 7"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "AccountDeletion"
+      },
       "AccountOut": {
         "properties": {
           "email": {
@@ -1545,6 +1815,33 @@
           "detail"
         ],
         "title": "ParameterError"
+      },
+      "PasswordChange": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "title": "Current Password",
+            "description": "Пароль аккаунта",
+            "examples": [
+              "мама мыла раму 7"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Новый пароль: от 8 до 64 символов, не из списка частых паролей и не совпадает с email",
+            "examples": [
+              "синий-трамвай-42"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "current_password",
+          "password"
+        ],
+        "title": "PasswordChange"
       },
       "PasswordResetConfirm": {
         "properties": {

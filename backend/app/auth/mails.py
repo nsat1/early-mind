@@ -49,3 +49,17 @@ def reset_mail(settings: Settings, email: str, token: str) -> Mail:
             "ничего делать не нужно — пароль останется прежним.\n"
         ),
     )
+
+
+def password_changed_mail(settings: Settings, email: str) -> Mail:
+    return Mail(
+        to=email,
+        subject="Пароль Early Mind изменён",
+        body=(
+            "Здравствуйте!\n\n"
+            "Пароль вашего аккаунта Early Mind только что изменён. "
+            "Если это были вы, ничего делать не нужно.\n\n"
+            "Если нет — восстановите пароль на странице входа: "
+            f"{app_link(settings, 'login')}\n"
+        ),
+    )

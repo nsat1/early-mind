@@ -45,7 +45,8 @@ def redis_store(settings: Settings) -> Iterator[SyncRedis]:
 @pytest.fixture
 def sent_mails(monkeypatch: pytest.MonkeyPatch) -> list[Mail]:
     mails: list[Mail] = []
-    monkeypatch.setattr(
-        "app.auth.router.send_mail", lambda settings, mail: mails.append(mail)
-    )
+    for module in ("app.auth.router", "app.auth.account"):
+        monkeypatch.setattr(
+            f"{module}.send_mail", lambda settings, mail: mails.append(mail)
+        )
     return mails

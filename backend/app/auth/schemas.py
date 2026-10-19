@@ -21,6 +21,20 @@ LinkToken = Annotated[
     ),
 ]
 
+AccountPassword = Annotated[
+    str, Field(description="Пароль аккаунта", examples=["мама мыла раму 7"])
+]
+NewPassword = Annotated[
+    str,
+    Field(
+        description=(
+            "Новый пароль: от 8 до 64 символов, не из списка частых паролей "
+            "и не совпадает с email"
+        ),
+        examples=["синий-трамвай-42"],
+    ),
+]
+
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
@@ -65,9 +79,7 @@ class AccountOut(BaseModel):
 
 class Login(StrictModel):
     email: Email
-    password: Annotated[
-        str, Field(description="Пароль аккаунта", examples=["мама мыла раму 7"])
-    ]
+    password: AccountPassword
 
 
 class EmailVerification(StrictModel):
@@ -76,13 +88,13 @@ class EmailVerification(StrictModel):
 
 class PasswordResetConfirm(StrictModel):
     token: LinkToken
-    password: Annotated[
-        str,
-        Field(
-            description=(
-                "Новый пароль: от 8 до 64 символов, не из списка частых паролей "
-                "и не совпадает с email"
-            ),
-            examples=["синий-трамвай-42"],
-        ),
-    ]
+    password: NewPassword
+
+
+class PasswordChange(StrictModel):
+    current_password: AccountPassword
+    password: NewPassword
+
+
+class AccountDeletion(StrictModel):
+    password: AccountPassword

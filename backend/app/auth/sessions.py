@@ -82,12 +82,17 @@ async def end_session(redis: Redis, session_id: str) -> None:
         )
 
 
-async def end_account_sessions(redis: Redis, account_id: uuid.UUID) -> None:
+async def end_account_sessions(
+    redis: Redis, account_id: uuid.UUID, keep: str | None = None
+) -> None:
     sessions_key = f"account-sessions:{account_id}"
-    session_hashes = await redis.smembers(sessions_key)
-    await redis.delete(
-        sessions_key, *(f"session:{session_hash}" for session_hash in session_hashes)
-    )
+    ended = await redis.smembers(sessions_key) - {keep}
+    session_keys = [f"session:{session_hash}" for session_hash in ended]
+    if keep is None:
+        await redis.delete(sessions_key, *session_keys)
+    elif ended:
+        async with redis.pipeline() as pipeline:
+            await pipeline.delete(*session_keys).srem(sessions_key, *ended).execute()
 
 
 def expired_session_cookie() -> str:

@@ -1122,6 +1122,25 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {
@@ -1220,6 +1239,25 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {
@@ -1296,6 +1334,25 @@ export interface operations {
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];
@@ -1401,7 +1458,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
-            /** @description Вход приостановлен после 5 неудачных попыток за 15 минут */
+            /** @description Вход приостановлен после 5 неудачных попыток за 15 минут или больше 30 запросов к аккаунту с одного адреса */
             429: {
                 headers: {
                     /** @description Через сколько секунд можно повторить */
@@ -1472,6 +1529,25 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Problem"];
                 };
             };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
             /** @description База данных или хранилище сессий недоступны */
             503: {
                 headers: {
@@ -1536,6 +1612,25 @@ export interface operations {
                      *       "title": "Forbidden",
                      *       "status": 403,
                      *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];
@@ -1617,6 +1712,25 @@ export interface operations {
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];
@@ -1715,6 +1829,25 @@ export interface operations {
                      *           "detail": "String should match pattern '^[a-z]+$'"
                      *         }
                      *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Больше 30 запросов к аккаунту за 15 минут с одного адреса */
+            429: {
+                headers: {
+                    /** @description Через сколько секунд можно повторить */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Too Many Requests",
+                     *       "status": 429,
+                     *       "detail": "Too many requests"
                      *     }
                      */
                     "application/problem+json": components["schemas"]["Problem"];

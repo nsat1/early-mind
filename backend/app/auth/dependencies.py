@@ -4,6 +4,12 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import APIKeyCookie
 from pydantic import HttpUrl
 
+from app.auth.limits import (
+    IP_REQUESTS_LIMIT,
+    attempts_retry_after,
+    count_attempt,
+    ip_requests_key,
+)
 from app.auth.sessions import (
     SESSION_COOKIE,
     Session,
@@ -14,6 +20,7 @@ from app.db.dependencies import AppSettings, RedisClient
 
 NOT_AUTHENTICATED = "Not authenticated"
 ORIGIN_NOT_ALLOWED = "Request origin not allowed"
+TOO_MANY_REQUESTS = "Too many requests"
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 DEFAULT_PORTS = {"http": 80, "https": 443}
 
@@ -55,3 +62,15 @@ async def check_origin(request: Request, settings: AppSettings) -> None:
         return
     if request.headers.get("origin") != app_origin(settings.app_url):
         raise HTTPException(403, ORIGIN_NOT_ALLOWED)
+
+
+async def limit_by_ip(
+    request: Request, redis: RedisClient, settings: AppSettings
+) -> None:
+    host = request.client.host if request.client else ""
+    key = ip_requests_key(settings.auth_secret, host)
+    if await count_attempt(redis, key) > IP_REQUESTS_LIMIT:
+        retry_after = await attempts_retry_after(redis, key)
+        raise HTTPException(
+            429, TOO_MANY_REQUESTS, headers={"Retry-After": str(retry_after)}
+        )

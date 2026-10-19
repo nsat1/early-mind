@@ -425,6 +425,30 @@
               }
             }
           },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку или пароль не по правилам",
             "content": {
@@ -502,6 +526,30 @@
                   "title": "Forbidden",
                   "status": 403,
                   "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
                 }
               }
             }
@@ -603,6 +651,30 @@
               }
             }
           },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку",
             "content": {
@@ -692,24 +764,8 @@
               }
             }
           },
-          "401": {
-            "description": "Неверный email или пароль",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Problem"
-                },
-                "example": {
-                  "type": "about:blank",
-                  "title": "Unauthorized",
-                  "status": 401,
-                  "detail": "Invalid email or password"
-                }
-              }
-            }
-          },
           "429": {
-            "description": "Вход приостановлен после 5 неудачных попыток за 15 минут",
+            "description": "Вход приостановлен после 5 неудачных попыток за 15 минут или больше 30 запросов к аккаунту с одного адреса",
             "headers": {
               "Retry-After": {
                 "description": "Через сколько секунд можно повторить",
@@ -728,6 +784,22 @@
                   "title": "Too Many Requests",
                   "status": 429,
                   "detail": "Too many login attempts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Неверный email или пароль",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unauthorized",
+                  "status": 401,
+                  "detail": "Invalid email or password"
                 }
               }
             }
@@ -803,6 +875,30 @@
               }
             }
           },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
+                }
+              }
+            }
+          },
           "503": {
             "description": "База данных или хранилище сессий недоступны",
             "content": {
@@ -851,6 +947,30 @@
                   "title": "Forbidden",
                   "status": 403,
                   "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
                 }
               }
             }
@@ -933,6 +1053,30 @@
               }
             }
           },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Параметры запроса не прошли проверку",
             "content": {
@@ -1010,6 +1154,30 @@
                   "title": "Forbidden",
                   "status": 403,
                   "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            "headers": {
+              "Retry-After": {
+                "description": "Через сколько секунд можно повторить",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Too Many Requests",
+                  "status": 429,
+                  "detail": "Too many requests"
                 }
               }
             }

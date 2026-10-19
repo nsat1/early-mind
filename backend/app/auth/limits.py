@@ -10,6 +10,7 @@ MAILS_PER_ACCOUNT = 3
 MAIL_LIMIT_WINDOW = timedelta(hours=1)
 MAX_ATTEMPTS = 5
 ATTEMPTS_PAUSE = timedelta(minutes=15)
+IP_REQUESTS_LIMIT = 30
 
 
 def mail_counter_key(account_id: uuid.UUID) -> str:
@@ -25,11 +26,18 @@ async def allow_mail(redis: Redis, account_id: uuid.UUID) -> bool:
     return count <= MAILS_PER_ACCOUNT
 
 
-def login_failures_key(secret: SecretStr, email: str) -> str:
-    digest = hmac.new(
-        secret.get_secret_value().encode(), email.encode(), hashlib.sha256
+def keyed_digest(secret: SecretStr, value: str) -> str:
+    return hmac.new(
+        secret.get_secret_value().encode(), value.encode(), hashlib.sha256
     ).hexdigest()
-    return f"login-failures:{digest}"
+
+
+def login_failures_key(secret: SecretStr, email: str) -> str:
+    return f"login-failures:{keyed_digest(secret, email)}"
+
+
+def ip_requests_key(secret: SecretStr, host: str) -> str:
+    return f"rate:{keyed_digest(secret, host)}"
 
 
 def password_failures_key(account_id: uuid.UUID) -> str:

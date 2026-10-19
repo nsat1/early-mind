@@ -1,5 +1,5 @@
 import re
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import psycopg
 import pytest
@@ -12,7 +12,6 @@ from app.auth.passwords import verify_password
 from app.auth.schemas import PRIVACY_POLICY_VERSION
 from app.auth.tokens import token_hash
 from app.core.mail import Mail
-from app.db.dependencies import get_redis
 from tests.auth.accounts import EMAIL, PHRASE, REGISTER_URL, registration
 
 pytestmark = pytest.mark.integration
@@ -126,9 +125,10 @@ def test_account_is_not_saved_without_email_token(
     client: TestClient,
     stored: psycopg.Connection,
     sent_mails: list[Mail],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    failing_redis = Mock(set=AsyncMock(side_effect=RedisConnectionError("down")))
-    app.dependency_overrides[get_redis] = lambda: failing_redis
+    failing_set = AsyncMock(side_effect=RedisConnectionError("down"))
+    monkeypatch.setattr(app.state.redis, "set", failing_set)
 
     response = client.post(URL, json=registration())
 

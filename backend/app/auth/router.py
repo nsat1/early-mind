@@ -9,8 +9,10 @@ from sqlalchemy.dialects.postgresql import insert
 from app.auth.dependencies import (
     NOT_AUTHENTICATED,
     ORIGIN_NOT_ALLOWED,
+    TOO_MANY_REQUESTS,
     CurrentSession,
     check_origin,
+    limit_by_ip,
     session_cookie,
 )
 from app.auth.limits import (
@@ -65,13 +67,27 @@ from app.core.errors import (
 from app.core.mail import send_mail
 from app.db.dependencies import AppSettings, DbSession, RedisClient
 
+RETRY_AFTER_HEADER = {
+    "Retry-After": {
+        "description": "Через сколько секунд можно повторить",
+        "schema": {"type": "integer"},
+    }
+}
+ROUTER_PROBLEMS = problem_responses(
+    {
+        403: ("Запрос пришёл с чужого сайта", ORIGIN_NOT_ALLOWED),
+        429: (
+            "Больше 30 запросов к аккаунту за 15 минут с одного адреса",
+            TOO_MANY_REQUESTS,
+        ),
+    }
+)
+ROUTER_PROBLEMS[429]["headers"] = RETRY_AFTER_HEADER
 router = APIRouter(
     prefix="/api/v1/auth",
     tags=["auth"],
-    dependencies=[Depends(check_origin)],
-    responses=problem_responses(
-        {403: ("Запрос пришёл с чужого сайта", ORIGIN_NOT_ALLOWED)}
-    ),
+    dependencies=[Depends(check_origin), Depends(limit_by_ip)],
+    responses=ROUTER_PROBLEMS,
 )
 
 INVALID_LINK = "Invalid or expired link"
@@ -96,18 +112,13 @@ LOGIN_PROBLEMS = problem_responses(
             EMAIL_NOT_VERIFIED,
         ),
         429: (
-            "Вход приостановлен после 5 неудачных попыток за 15 минут",
+            "Вход приостановлен после 5 неудачных попыток за 15 минут "
+            "или больше 30 запросов к аккаунту с одного адреса",
             TOO_MANY_LOGIN_ATTEMPTS,
         ),
     }
     | AUTH_PROBLEMS
 )
-RETRY_AFTER_HEADER = {
-    "Retry-After": {
-        "description": "Через сколько секунд можно повторить",
-        "schema": {"type": "integer"},
-    }
-}
 LOGIN_PROBLEMS[429]["headers"] = RETRY_AFTER_HEADER
 
 

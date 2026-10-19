@@ -55,7 +55,7 @@ def test_deletion_leaves_nothing_behind(
     assert "; Max-Age=0; Path=/; SameSite=lax; Secure" in response.headers["set-cookie"]
     assert stored.execute("SELECT count(*) FROM accounts").fetchone() == (0,)
     assert stored.execute("SELECT count(*) FROM consents").fetchone() == (0,)
-    assert redis_store.keys("*") == []
+    assert set(redis_store.keys("*")) == set(redis_store.keys("rate:*"))
     assert client.get("/api/v1/account", headers=other).status_code == 401
 
 

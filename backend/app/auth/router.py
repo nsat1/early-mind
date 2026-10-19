@@ -21,7 +21,7 @@ from app.auth.limits import (
     login_retry_after,
     pause_login,
 )
-from app.auth.mails import account_exists_mail, verification_mail
+from app.auth.mails import account_exists_mail, reset_mail, verification_mail
 from app.auth.models import Account, Consent
 from app.auth.passwords import (
     PasswordError,
@@ -32,6 +32,7 @@ from app.auth.passwords import (
 from app.auth.schemas import (
     EmailVerification,
     Login,
+    PasswordResetRequest,
     Registration,
     VerificationResend,
 )
@@ -42,7 +43,7 @@ from app.auth.sessions import (
     expired_session_cookie,
     set_session_cookie,
 )
-from app.auth.tokens import consume_email_token, store_email_token
+from app.auth.tokens import EMAIL_TOKEN, RESET_TOKEN, consume_token, store_token
 from app.core.errors import (
     COMMON_PROBLEMS,
     DATABASE_UNAVAILABLE,
@@ -148,7 +149,7 @@ async def register(
                 account_id=account_id, policy_version=registration.policy_version
             )
         )
-        token = await store_email_token(redis, account_id)
+        token = await store_token(redis, EMAIL_TOKEN, account_id)
         mail = verification_mail(settings, registration.email, token)
     if account_id is not None and await allow_mail(redis, account_id):
         background_tasks.add_task(send_mail, settings, mail)
@@ -179,7 +180,7 @@ async def register(
 async def verify_email(
     verification: EmailVerification, session: DbSession, redis: RedisClient
 ) -> Response:
-    account_id = await consume_email_token(redis, verification.token)
+    account_id = await consume_token(redis, EMAIL_TOKEN, verification.token)
     if account_id is not None:
         account_id = await session.scalar(
             update(Account)
@@ -221,7 +222,7 @@ async def resend_verification(
         )
     )
     if account_id is not None and await allow_mail(redis, account_id):
-        token = await store_email_token(redis, account_id)
+        token = await store_token(redis, EMAIL_TOKEN, account_id)
         background_tasks.add_task(
             send_mail, settings, verification_mail(settings, resend.email, token)
         )
@@ -325,3 +326,34 @@ async def logout(
 async def logout_all(current: CurrentSession, redis: RedisClient) -> Response:
     await end_account_sessions(redis, current.account_id)
     return logged_out()
+
+
+@router.post(
+    "/password-reset",
+    status_code=202,
+    response_class=Response,
+    summary="Запросить восстановление пароля",
+    description=(
+        "Если аккаунт есть, отправляет письмо со ссылкой для нового пароля, "
+        "прежняя ссылка перестаёт работать. Ссылка действует 1 час, не больше "
+        "3 писем в час на аккаунт. Ответ одинаковый в любом случае."
+    ),
+    response_description="Запрос принят",
+    responses=problem_responses(AUTH_PROBLEMS),
+)
+async def request_password_reset(
+    reset: PasswordResetRequest,
+    session: DbSession,
+    redis: RedisClient,
+    settings: AppSettings,
+    background_tasks: BackgroundTasks,
+) -> Response:
+    account_id = await session.scalar(
+        select(Account.account_id).where(Account.email == reset.email)
+    )
+    if account_id is not None and await allow_mail(redis, account_id):
+        token = await store_token(redis, RESET_TOKEN, account_id)
+        background_tasks.add_task(
+            send_mail, settings, reset_mail(settings, reset.email, token)
+        )
+    return Response(status_code=202)

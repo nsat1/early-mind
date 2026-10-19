@@ -12,6 +12,14 @@ Email = Annotated[
         examples=["anna.petrova@mail.ru"],
     ),
 ]
+LinkToken = Annotated[
+    str,
+    Field(
+        max_length=64,
+        description="Токен из ссылки в письме — часть после `#token=`",
+        examples=["f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI"],
+    ),
+]
 
 
 class StrictModel(BaseModel):
@@ -63,11 +71,18 @@ class Login(StrictModel):
 
 
 class EmailVerification(StrictModel):
-    token: Annotated[
+    token: LinkToken
+
+
+class PasswordResetConfirm(StrictModel):
+    token: LinkToken
+    password: Annotated[
         str,
         Field(
-            max_length=64,
-            description="Токен из ссылки в письме — часть после `#token=`",
-            examples=["f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI"],
+            description=(
+                "Новый пароль: от 8 до 64 символов, не из списка частых паролей "
+                "и не совпадает с email"
+            ),
+            examples=["синий-трамвай-42"],
         ),
     ]

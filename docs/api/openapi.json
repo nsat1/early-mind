@@ -976,6 +976,103 @@
         }
       }
     },
+    "/api/v1/auth/password-reset/confirm": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Задать новый пароль по ссылке",
+        "description": "Меняет пароль по токену из письма, подтверждает email, завершает все сессии аккаунта и снимает приостановку входа. Если пароль не по правилам, ссылка продолжает работать.",
+        "operationId": "confirm_password_reset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Пароль изменён"
+          },
+          "403": {
+            "description": "Запрос пришёл с чужого сайта",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Forbidden",
+                  "status": 403,
+                  "detail": "Request origin not allowed"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ссылка устарела, уже использована или аккаунт удалён",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Bad Request",
+                  "status": 400,
+                  "detail": "Invalid or expired link"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Параметры запроса не прошли проверку или пароль не по правилам",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Unprocessable Content",
+                  "status": 422,
+                  "detail": "Request parameters are invalid",
+                  "errors": [
+                    {
+                      "in": "path",
+                      "name": "alphabet_id",
+                      "code": "string_pattern_mismatch",
+                      "detail": "String should match pattern '^[a-z]+$'"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "База данных или хранилище сессий недоступны",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                },
+                "example": {
+                  "type": "about:blank",
+                  "title": "Service Unavailable",
+                  "status": 503,
+                  "detail": "Database unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/account": {
       "get": {
         "tags": [
@@ -1448,6 +1545,34 @@
           "detail"
         ],
         "title": "ParameterError"
+      },
+      "PasswordResetConfirm": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Token",
+            "description": "Токен из ссылки в письме — часть после `#token=`",
+            "examples": [
+              "f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "Новый пароль: от 8 до 64 символов, не из списка частых паролей и не совпадает с email",
+            "examples": [
+              "синий-трамвай-42"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "token",
+          "password"
+        ],
+        "title": "PasswordResetConfirm"
       },
       "PasswordResetRequest": {
         "properties": {

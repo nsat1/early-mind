@@ -244,6 +244,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Задать новый пароль по ссылке
+         * @description Меняет пароль по токену из письма, подтверждает email, завершает все сессии аккаунта и снимает приостановку входа. Если пароль не по правилам, ссылка продолжает работать.
+         */
+        post: operations["confirm_password_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/account": {
         parameters: {
             query?: never;
@@ -488,6 +508,21 @@ export interface components {
              * @example String should match pattern '^[a-z]+$'
              */
             detail: string;
+        };
+        /** PasswordResetConfirm */
+        PasswordResetConfirm: {
+            /**
+             * Token
+             * @description Токен из ссылки в письме — часть после `#token=`
+             * @example f_i7GrgiEQEbg0VS0YT9XZtpDpXRbFBsnqDbI8JQDUI
+             */
+            token: string;
+            /**
+             * Password
+             * @description Новый пароль: от 8 до 64 символов, не из списка частых паролей и не совпадает с email
+             * @example синий-трамвай-42
+             */
+            password: string;
         };
         /** PasswordResetRequest */
         PasswordResetRequest: {
@@ -1499,6 +1534,104 @@ export interface operations {
                 };
             };
             /** @description Параметры запроса не прошли проверку */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Unprocessable Content",
+                     *       "status": 422,
+                     *       "detail": "Request parameters are invalid",
+                     *       "errors": [
+                     *         {
+                     *           "in": "path",
+                     *           "name": "alphabet_id",
+                     *           "code": "string_pattern_mismatch",
+                     *           "detail": "String should match pattern '^[a-z]+$'"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description База данных или хранилище сессий недоступны */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Service Unavailable",
+                     *       "status": 503,
+                     *       "detail": "Database unavailable"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirm_password_reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
+            };
+        };
+        responses: {
+            /** @description Пароль изменён */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ссылка устарела, уже использована или аккаунт удалён */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Bad Request",
+                     *       "status": 400,
+                     *       "detail": "Invalid or expired link"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Запрос пришёл с чужого сайта */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "type": "about:blank",
+                     *       "title": "Forbidden",
+                     *       "status": 403,
+                     *       "detail": "Request origin not allowed"
+                     *     }
+                     */
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Параметры запроса не прошли проверку или пароль не по правилам */
             422: {
                 headers: {
                     [name: string]: unknown;

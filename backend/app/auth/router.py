@@ -32,6 +32,7 @@ from app.auth.passwords import (
 from app.auth.schemas import (
     EmailVerification,
     Login,
+    PasswordResetConfirm,
     PasswordResetRequest,
     Registration,
     VerificationResend,
@@ -43,7 +44,13 @@ from app.auth.sessions import (
     expired_session_cookie,
     set_session_cookie,
 )
-from app.auth.tokens import EMAIL_TOKEN, RESET_TOKEN, consume_token, store_token
+from app.auth.tokens import (
+    EMAIL_TOKEN,
+    RESET_TOKEN,
+    consume_token,
+    find_token,
+    store_token,
+)
 from app.core.errors import (
     COMMON_PROBLEMS,
     DATABASE_UNAVAILABLE,
@@ -69,6 +76,12 @@ TOO_MANY_LOGIN_ATTEMPTS = "Too many login attempts"
 AUTH_PROBLEMS = {
     422: COMMON_PROBLEMS[422],
     503: ("База данных или хранилище сессий недоступны", DATABASE_UNAVAILABLE),
+}
+PASSWORD_PROBLEMS = {
+    422: (
+        "Параметры запроса не прошли проверку или пароль не по правилам",
+        INVALID_PARAMETERS,
+    )
 }
 LOGIN_PROBLEMS = problem_responses(
     {
@@ -110,15 +123,7 @@ def password_problem(error: PasswordError) -> RequestValidationError:
         "зарегистрирован ли email."
     ),
     response_description="Запрос принят, письмо будет отправлено",
-    responses=problem_responses(
-        AUTH_PROBLEMS
-        | {
-            422: (
-                "Параметры запроса не прошли проверку или пароль не по правилам",
-                INVALID_PARAMETERS,
-            )
-        }
-    ),
+    responses=problem_responses(AUTH_PROBLEMS | PASSWORD_PROBLEMS),
 )
 async def register(
     registration: Registration,
@@ -357,3 +362,55 @@ async def request_password_reset(
             send_mail, settings, reset_mail(settings, reset.email, token)
         )
     return Response(status_code=202)
+
+
+@router.post(
+    "/password-reset/confirm",
+    status_code=204,
+    response_class=Response,
+    summary="Задать новый пароль по ссылке",
+    description=(
+        "Меняет пароль по токену из письма, подтверждает email, завершает все "
+        "сессии аккаунта и снимает приостановку входа. Если пароль не по "
+        "правилам, ссылка продолжает работать."
+    ),
+    response_description="Пароль изменён",
+    responses=problem_responses(
+        {400: ("Ссылка устарела, уже использована или аккаунт удалён", INVALID_LINK)}
+        | AUTH_PROBLEMS
+        | PASSWORD_PROBLEMS
+    ),
+)
+async def confirm_password_reset(
+    reset: PasswordResetConfirm,
+    session: DbSession,
+    redis: RedisClient,
+    settings: AppSettings,
+) -> Response:
+    account_id = await find_token(redis, RESET_TOKEN, reset.token)
+    email = None
+    if account_id is not None:
+        email = await session.scalar(
+            select(Account.email).where(Account.account_id == account_id)
+        )
+    if email is None:
+        raise HTTPException(400, INVALID_LINK)
+    try:
+        check_password(reset.password, email)
+    except PasswordError as error:
+        raise password_problem(error) from error
+    if await consume_token(redis, RESET_TOKEN, reset.token) != account_id:
+        raise HTTPException(400, INVALID_LINK)
+    password_hash = await run_in_threadpool(hash_password, reset.password)
+    await session.execute(
+        update(Account)
+        .where(Account.account_id == account_id)
+        .values(
+            password_hash=password_hash,
+            email_verified_at=func.coalesce(Account.email_verified_at, func.now()),
+        )
+    )
+    await end_account_sessions(redis, account_id)
+    await redis.delete(login_failures_key(settings.auth_secret, email))
+    await session.commit()
+    return logged_out()

@@ -37,6 +37,11 @@ async def store_token(redis: Redis, kind: TokenKind, account_id: uuid.UUID) -> s
     return token
 
 
+async def find_token(redis: Redis, kind: TokenKind, token: str) -> uuid.UUID | None:
+    account_id = await redis.get(kind.key(token))
+    return None if account_id is None else uuid.UUID(account_id)
+
+
 async def consume_token(redis: Redis, kind: TokenKind, token: str) -> uuid.UUID | None:
     account_id = await redis.getdel(kind.key(token))
     return None if account_id is None else uuid.UUID(account_id)
